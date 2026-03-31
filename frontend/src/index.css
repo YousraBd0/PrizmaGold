@@ -1,4 +1,5 @@
 /* Global reset + font smoothing */
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=DM+Sans:ital,opsz,wght@0,9...");
 
 *,
 *::before,
@@ -36,7 +37,6 @@ input {
 }
 
 /* market */
-@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap");
 
 *,
 *::before,
@@ -64,24 +64,29 @@ body {
 ::-webkit-scrollbar {
   width: 5px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(212, 160, 23, 0.25);
   border-radius: 10px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(212, 160, 23, 0.5);
 }
 
 /* Pulse animation for LIVE dot */
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
     box-shadow: 0 0 4px #22c55e;
   }
+
   50% {
     opacity: 0.6;
     box-shadow: 0 0 10px #22c55e;
@@ -200,13 +205,14 @@ input:focus {
   height: 150px;
 }
 
-.market-cards {
+/* .market-cards {
   display: flex;
   gap: 14px;
-}
+} */
 
 .market-card {
   flex: 1;
+  width: 300px;
   background: var(--card);
   border-radius: 16px;
   padding: 14px 14px 16px;
@@ -233,6 +239,7 @@ input:focus {
 .gold-tag {
   background: var(--gold);
 }
+
 .silver-tag {
   background: #b6b6c9;
 }
@@ -240,9 +247,11 @@ input:focus {
 .market-info {
   font-family: "Inter", system-ui, sans-serif;
 }
+
 .market-title {
   font-size: 13px;
 }
+
 .market-sub {
   font-size: 11px;
   color: var(--muted);
@@ -262,9 +271,11 @@ input:focus {
   font-family: "Inter", system-ui, sans-serif;
   font-size: 11px;
 }
+
 .price-change.positive {
   color: #1f8d4d;
 }
+
 .price-change.negative {
   color: #c14343;
 }
@@ -309,6 +320,7 @@ input:focus {
   font-size: 13px;
   color: #ddd7d7;
 }
+
 .qa-sub {
   font-size: 11px;
   color: var(--muted);
@@ -360,8 +372,8 @@ input:focus {
 }
 
 .trend-img {
-  width: 100%;
-  height: 180px;
+  width: 60%;
+  height: 60px;
   object-fit: cover;
   display: block;
 }
@@ -369,6 +381,7 @@ input:focus {
 .trend-body {
   padding: 12px 14px 14px;
 }
+
 .trend-title {
   font-size: 15px;
 }
@@ -516,6 +529,9 @@ input:focus {
 
 .tp-category-row {
   display: flex;
+  justify-content: center;
+  /* ← centré */
+  flex-wrap: wrap;
   overflow-x: auto;
   padding: 4px 2px 2px 4px;
   gap: 100px;
@@ -527,7 +543,10 @@ input:focus {
 }
 
 .tp-category-card {
-  min-width: 150px;
+  min-width: 120px;
+  max-width: 150px;
+  flex: 1;
+
   border-radius: 18px;
   border: 1px solid #e4dfd6;
   background: #f9f7f4;
@@ -588,63 +607,33 @@ input:focus {
   gap: 14px;
 }
 
-.tp-product-card {
-  background: #ffffff;
-  border-radius: 18px;
-  overflow: hidden;
-  cursor: pointer;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-}
-
 .tp-product-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
 }
 
-.tp-product-image-wrapper {
-  position: relative;
-  width: 100%;
-  padding-top: 75%;
-  overflow: hidden;
-}
-
-.tp-product-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .tp-favorite-btn {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  left: 12px;
   border: none;
   background: transparent;
-  border-radius: 999px;
-  width: 32px;
-  height: 32px;
-  font-size: 16px;
+  font-size: 18px;
+  color: #c9a84c;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
+  z-index: 10;
+  transition: transform 0.2s;
 }
 
 .tp-favorite-btn:hover {
-  border-color: transparent;
+  transform: scale(1.1);
 }
 
-.tp-favorite-btn--active {
-  background: #1d1b1a;
-  color: #ffffff;
-}
-
-.tp-product-overlay {
+/* .tp-product-overlay {
   position: absolute;
   left: 0;
   right: 0;
@@ -652,6 +641,142 @@ input:focus {
   padding: 14px 16px;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
   color: #ffffff;
+} */
+
+/* ── Responsive ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .tp-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tp-category-card {
+    min-width: 110px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tp-product-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tp-page {
+    padding: 16px;
+  }
+
+  .tp-page-title {
+    font-size: 16px;
+  }
+}
+
+/* ── Badge Trend Status ─────────────────────────── */
+.tp-badge-trend {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  z-index: 3;
+  letter-spacing: 0.4px;
+  backdrop-filter: blur(6px);
+}
+
+.tp-badge-trend--rising {
+  background: rgba(220, 80, 30, 0.85);
+  color: #fff;
+}
+
+.tp-badge-trend--stable {
+  background: rgba(40, 100, 200, 0.85);
+  color: #fff;
+}
+
+.tp-badge-trend--low {
+  background: rgba(40, 160, 80, 0.85);
+  color: #fff;
+}
+
+/* ── Badge Cluster ──────────────────────────────── */
+.tp-badge-cluster {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(16, 44, 29, 0.95);
+  /* Sidebar #102C1D with opacity */
+  color: #E8B40D;
+  /* Sidebar gold */
+  border: 1px solid rgba(232, 180, 13, 0.35);
+  /* Subtle gold border to pop against image */
+  z-index: 3;
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(6px);
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Fond sombre carte ──────────────────────────── */
+.tp-product-card {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #2d6a4f33;
+  box-shadow:
+    0 4px 20px rgba(45, 106, 79, 0.15),
+    /* ← vert doux */
+    0 1px 4px rgba(0, 0, 0, 0.06);
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+
+.tp-product-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 8px 28px rgba(45, 106, 79, 0.25),
+    /* ← vert plus fort au hover */
+    0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.tp-product-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: white;
+  /* ← fond blanc cassé */
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tp-product-image {
+  width: 50%;
+  height: 55%;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 16px;
+  display: block;
+}
+
+.tp-product-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top,
+      rgba(15, 26, 20, 0.92) 0%,
+      rgba(15, 26, 20, 0.5) 45%,
+      transparent 100%);
+  padding: 10px 12px 14px;
+  border-radius: 0 0 16px 16px;
 }
 
 .tp-product-title {
@@ -662,26 +787,193 @@ input:focus {
 
 .tp-product-price {
   font-size: 13px;
+  color: #e9c152;
+  /* ← couleur or */
+  font-weight: 600;
 }
 
-/* ── Responsive ────────────────────────────────────── */
-@media (max-width: 768px) {
-  .tp-product-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .tp-category-card {
-    min-width: 110px;
-  }
+/* ── Section Clusters ───────────────────────────── */
+/* ── Clusters inline sous trending ─────────────── */
+.cluster-section-inline {
+  margin-top: 4px;
 }
 
-@media (max-width: 480px) {
-  .tp-product-grid {
-    grid-template-columns: 1fr;
-  }
-  .tp-page {
-    padding: 16px;
-  }
-  .tp-page-title {
-    font-size: 16px;
-  }
+.cluster-cards-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: nowrap;
+  /* reste sur une ligne */
+}
+
+.cluster-card-inline {
+  flex: 1;
+  min-width: 0;
+  /* permet de rétrécir */
+  background: var(--card);
+  border-radius: 18px;
+  padding: 18px 16px 20px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Espace entre les deux cartes trending ──────── */
+.trending-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  /* ← augmenté de 14px à 20px */
+}
+
+/* ── Supprime search + profile ──────────────────── */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Fix image dans trend-card ──────────────────── */
+.trend-img-wrapper {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  /* ← modifie cette valeur pour ajuster la hauteur */
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+}
+
+.trend-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  /* ← "center top" montre le haut du bijou */
+  display: block;
+}
+
+.cluster-card {
+  flex: 1;
+  min-width: 180px;
+  background: #c1beb9;
+  /* ← remplace var(--color-background-secondary) */
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e4dfd6;
+  /* ← remplace var(--color-border-tertiary) */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.cluster-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 8px;
+  margin-bottom: 8px;
+}
+
+.cluster-emoji {
+  font-size: 16px;
+}
+
+.cluster-status {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.cluster-name {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b5936;
+  /* ← remplace var(--color-text-primary) */
+  margin-bottom: 12px;
+}
+
+.cluster-meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.cluster-score,
+.cluster-count {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cluster-score-val,
+.cluster-count-val {
+  font-size: 15px;
+  font-weight: 600;
+  color: #615b58;
+  /* ← remplace var(--color-text-primary) */
+}
+
+.cluster-score-label,
+.cluster-count-label {
+  font-size: 10px;
+  color: #7a7a7a;
+  /* ← remplace var(--color-text-secondary) */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cluster-bar-bg {
+  height: 4px;
+  background: #e4dfd6;
+  /* ← remplace var(--color-border-tertiary) */
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cluster-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+/* ── Dark Mode ─────────────────────────────────────── */
+.dark-mode {
+  --card: #181818;
+  --white: #181818;
+  --muted: #a0a0a0;
+}
+
+.dark-mode .hello-title,
+.dark-mode .section-title,
+.dark-mode .qa-title,
+.dark-mode .market-title,
+.dark-mode .price,
+.dark-mode .trend-title,
+.dark-mode .reach-number {
+  color: #ffffff !important;
+}
+
+.dark-mode .hello-sub,
+.dark-mode .section-label,
+.dark-mode .qa-sub,
+.dark-mode .market-sub,
+.dark-mode .trend-sub,
+.dark-mode .trend-label,
+.dark-mode .reach-label {
+  color: #a0a0a0 !important;
+}
+
+.dark-mode .market-card,
+.dark-mode .qa-card,
+.dark-mode .reach-card,
+.dark-mode .quick-actions,
+.dark-mode .trend-card {
+  background: #181818 !important;
+  border-color: #2a2a2a !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark-mode .qa-card {
+  border: 1px solid #2a2a2a !important;
+}
+
+.dark-mode .icon-btn svg {
+  color: #ffffff !important;
 }

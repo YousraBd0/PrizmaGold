@@ -48,14 +48,18 @@ function Profile({ setActiveTab }) {
 }
 
 // ─── renderPage ───────────────────────────────────────────────────────────────
-function renderPage(activeTab, setActiveTab) {
+function renderPage(activeTab, setActiveTab, darkMode, setDarkMode) {
   switch (activeTab) {
     case "dashboard":
-      // ✅ Vrai composant Dashboard avec prop onViewTrending
-      return <Dashboard onViewTrending={() => setActiveTab("trending")} />;
+      return <Dashboard 
+        onViewTrending={() => setActiveTab("trending")} 
+        onViewAIStudio={() => setActiveTab("ai-studio")}
+        onViewMarketIntel={() => setActiveTab("market-intel")}
+        darkMode={darkMode}
+        toggleDarkMode={() => setDarkMode(!darkMode)}
+      />;
 
     case "trending":
-      // ✅ TrendingPage avec sidebar cachée + bouton retour
       return <TrendingPage onBack={() => setActiveTab("dashboard")} />;
 
     case "ai-studio":
@@ -76,14 +80,20 @@ function renderPage(activeTab, setActiveTab) {
       );
 
     default:
-      return <Dashboard onViewTrending={() => setActiveTab("trending")} />;
+      return <Dashboard 
+        onViewTrending={() => setActiveTab("trending")} 
+        onViewAIStudio={() => setActiveTab("ai-studio")}
+        onViewMarketIntel={() => setActiveTab("market-intel")}
+        darkMode={darkMode}
+        toggleDarkMode={() => setDarkMode(!darkMode)}
+      />;
   }
 }
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  // ✅ "dashboard" par défaut
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [darkMode, setDarkMode] = useState(false);
 
   return (
     <div
@@ -92,15 +102,19 @@ export default function App() {
         height: "100vh",
         overflow: "hidden",
         fontFamily: "'DM Sans', sans-serif",
-        background: "#f8f7f4",
+        background: darkMode ? "#121212" : "#f8f7f4",
+        color: darkMode ? "#ffffff" : "inherit",
+        transition: "background 0.3s, color 0.3s"
       }}
     >
-      {/* ✅ Sidebar cachée sur la page trending */}
       {activeTab !== "trending" && (
         <SideBar activeTab={activeTab} setActiveTab={setActiveTab} />
       )}
 
-      <main style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+      <main 
+        className={darkMode ? "dark-mode" : ""} 
+        style={{ flex: 1, overflow: "hidden", position: "relative" }}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -110,7 +124,7 @@ export default function App() {
             transition={{ duration: 0.28, ease: "easeInOut" }}
             style={{ height: "100%", overflow: "auto" }}
           >
-            {renderPage(activeTab, setActiveTab)}
+            {renderPage(activeTab, setActiveTab, darkMode, setDarkMode)}
           </motion.div>
         </AnimatePresence>
       </main>

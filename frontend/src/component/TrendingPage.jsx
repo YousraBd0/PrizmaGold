@@ -1,38 +1,29 @@
+// TrendingPage.jsx — products et categories viennent de l'API
+
 import React, { useState } from "react";
-
 import "../index.css";
-
-import gRingImg from "../assets/grenRING.jpg";
 import all from "../assets/all.png";
 import bracelet from "../assets/bracelet.png";
 import earing from "../assets/earing.png";
 import neck from "../assets/neck.png";
 import ring from "../assets/ring.png";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { useTrendingAll } from "../hooks/useTrends";
 
-const categories = [
-  { id: "all", iconImg: all },
-  { id: "rings", iconImg: ring },
-  { id: "necklaces", iconImg: neck },
-  { id: "bracelets", iconImg: bracelet },
-  { id: "earrings", iconImg: earing },
-];
-
-const products = Array.from({ length: 10 }).map((_, i) => ({
-  id: i + 1,
-  title: "LUXURIOUS GOLD RING",
-  price: "$3,800",
-  image: gRingImg,
-  category: i % 2 === 0 ? "rings" : "bracelets",
-}));
+const categoryIcons = {
+  all: all,
+  rings: ring,
+  necklaces: neck,
+  bracelets: bracelet,
+  earrings: earing,
+};
 
 export default function TrendingPage({ onBack }) {
   const [activeCategory, setActiveCategory] = useState("all");
   const [favorites, setFavorites] = useState([]);
 
-  const filtered =
-    activeCategory === "all"
-      ? products
-      : products.filter((p) => p.category === activeCategory);
+  const { products, categories, loading, error } =
+    useTrendingAll(activeCategory);
 
   const toggleFavorite = (id) =>
     setFavorites((prev) =>
@@ -43,56 +34,114 @@ export default function TrendingPage({ onBack }) {
     <div className="tp-page">
       <header className="tp-top-bar">
         <button className="tp-back-link" onClick={onBack}>
-          ← ALL
+          ← BACK
         </button>
-        <h1 className="tp-page-title">TRENDING NOW</h1>
-        <button className="tp-search-btn">🔍</button>
       </header>
 
+      {/* ── Catégories dynamiques depuis l'API ── */}
       <section className="tp-category-section">
         <h2 className="tp-section-title">EXPLORE BY CATEGORY</h2>
         <div className="tp-category-row">
           {categories.map((cat) => (
             <button
-              key={cat.id}
+              key={cat.value}
               className={
                 "tp-category-card" +
-                (activeCategory === cat.id ? " tp-category-card--active" : "")
+                (activeCategory === cat.value
+                  ? " tp-category-card--active"
+                  : "")
               }
-              onClick={() => setActiveCategory(cat.id)}
+              onClick={() => setActiveCategory(cat.value)}
             >
               <div className="tp-category-thumb">
-                <img src={cat.iconImg} alt={cat.id} />
+                <img src={categoryIcons[cat.value] || all} alt={cat.label} />
               </div>
-              <span className="tp-category-label">{cat.id}</span>
+              <span className="tp-category-label">{cat.label}</span>
+              <span className="tp-category-count">{cat.count}</span>
             </button>
           ))}
         </div>
       </section>
 
+      {/* ── Produits dynamiques depuis l'API ── */}
       <section className="tp-product-section">
         <h2 className="tp-section-title">TRENDING NOW</h2>
+
+        {loading && (
+          <p
+            style={{
+              textAlign: "center",
+              padding: "2rem",
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            Loading products...
+          </p>
+        )}
+
+        {error && (
+          <p style={{ color: "red", padding: "1rem" }}>
+            Cannot reach API — make sure FastAPI is running on port 8000
+          </p>
+        )}
+
         <div className="tp-product-grid">
-          {filtered.map((p) => (
-            <article key={p.id} className="tp-product-card">
-              <div className="tp-product-image-wrapper">
-                <img src={p.image} alt={p.title} className="tp-product-image" />
-                <button
-                  className={
-                    "tp-favorite-btn" +
-                    (favorites.includes(p.id) ? " tp-favorite-btn--active" : "")
-                  }
-                  onClick={() => toggleFavorite(p.id)}
-                >
-                  ❤
-                </button>
-                <div className="tp-product-overlay">
-                  <h3 className="tp-product-title">{p.title}</h3>
-                  <p className="tp-product-price">{p.price}</p>
+          {!loading &&
+            !error &&
+            products.map((product) => (
+              <article key={product.id} className="tp-product-card">
+                <div className="tp-product-image-wrapper">
+                  {/* Image */}
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt={product.title}
+                      className="tp-product-image"
+                      onError={(e) => {
+                        e.target.src = ring;
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="tp-product-image"
+                      style={{ background: "#111" }}
+                    />
+                  )}
+
+                  {/* Badge Cluster — droit */}
+                  {product.cluster_name &&
+                    product.cluster_name !== "no_image" && (
+                      <div className="tp-badge-cluster">
+                        {product.cluster_name}
+                      </div>
+                    )}
+
+                  {/* Favori */}
+                  <button
+                    className="tp-favorite-btn"
+                    onClick={() => toggleFavorite(product.id)}
+                  >
+                    {favorites.includes(product.id) ? (
+                      <FaHeart />
+                    ) : (
+                      <FaRegHeart />
+                    )}
+                  </button>
+
+                  {/* Overlay titre + prix */}
+                  <div className="tp-product-overlay">
+                    <h3 className="tp-product-title">
+                      {product.title.length > 35
+                        ? product.title.substring(0, 35) + "..."
+                        : product.title.toUpperCase()}
+                    </h3>
+                    <p className="tp-product-price">
+                      ${product.price.toFixed(2)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            ))}
         </div>
       </section>
     </div>

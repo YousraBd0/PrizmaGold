@@ -11,6 +11,10 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: false,
+    proxy: {
+      "/trends": "http://localhost:8000",
+      "/images": "http://localhost:8000",
+    },
   },
   optimizeDeps: {
     include: ["recharts", "framer-motion"],
