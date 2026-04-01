@@ -4,46 +4,36 @@ import DetailsPanel from "./DetailsPanel";
 import AISidePanel from "./AISidePanel";
 import bgEmeraldSatin from "../assets/Gemini_Generated_Image.png";
 
-const METALS = {
-  emerald:   { label: "Emerald",   metalName: "18k Gold" },
-  malachite: { label: "Malachite", metalName: "Silver 925" },
-  verdigris: { label: "Verdigris", metalName: "Rose Gold" },
-  jade:      { label: "Jade",      metalName: "Platinum" },
-};
-
-const DEFAULT_SPECS = {
-  name:   "Emerald Ring",
-  size:   "20",
-  stone:  "Green Emerald",
-  weight: "3.2 g",
-  cost:   "3,150.00 $",
-};
-
 const StudioPage = () => {
+  const [specs, setSpecs] = useState({
+    size: "20",
+    metal: "18k Gold",
+    stone: "Green Emerald",
+    weight: "3.2 g",
+    cost: "3,150.00 $"
+  });
+
   const [activeMetal, setActiveMetal] = useState("emerald");
-  const [specs, setSpecs] = useState(DEFAULT_SPECS);
+  const [modelUrl, setModelUrl] = useState(null); // NEW: Track the 3D model path
 
-  const handleDesignUpdate = (prompt) => {
-    const lower = prompt.toLowerCase();
-    let metal = activeMetal;
-    if (lower.includes("silver") || lower.includes("platinum")) metal = "jade";
-    else if (lower.includes("copper") || lower.includes("rose")) metal = "verdigris";
-    else if (lower.includes("malachite"))                         metal = "malachite";
-    else if (lower.includes("gold") || lower.includes("emerald")) metal = "emerald";
-
-    setActiveMetal(metal);
-    setSpecs({
-      name:   prompt.length > 38 ? prompt.slice(0, 38) + "…" : prompt,
-      size:   "20",
-      stone:  lower.includes("ruby")     ? "Ruby"
-            : lower.includes("sapphire") ? "Sapphire"
-            : lower.includes("diamond")  ? "Diamond"
-            : "Green Emerald",
-      weight: "3.2 g",
-      cost:   "3,150.00 $",
-    });
-
-    return metal;
+  const handleDesignUpdate = (newSpecs, newModelUrl) => {
+    if (newSpecs) {
+      setSpecs(newSpecs);
+      if (newSpecs.metal) {
+         // Map the metal name from the API to your METALS object keys
+      const metalMap = {
+        "18k gold":   "emerald",
+        "rose gold":  "verdigris",
+        "silver 925": "malachite",
+        "platinum":   "jade",
+      };
+      const key = metalMap[newSpecs.metal.toLowerCase()] ?? "emerald";
+      setActiveMetal(key);
+      }
+    }
+    if (newModelUrl) {
+      setModelUrl(newModelUrl);
+     } 
   };
 
   return (
@@ -55,9 +45,10 @@ const StudioPage = () => {
         <DetailsPanel
           activeMetal={activeMetal}
           setActiveMetal={setActiveMetal}
-          specs={{ ...specs, metal: METALS[activeMetal].metalName }}
+          specs={specs}
+          modelUrl={modelUrl}
         />
-        <AISidePanel onDesignUpdate={handleDesignUpdate} />
+        <AISidePanel onDesignUpdate={handleDesignUpdate} currentSpecs={specs} />
       </div>
     </div>
   );

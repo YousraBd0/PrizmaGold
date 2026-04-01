@@ -1,99 +1,71 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import styles from "../styles/StudioPage.module.css";
 import coinIcon from "../assets/download.jpg";
 
 const METALS = {
-  emerald:   { label: "Emerald",   band: 0xd4a520, bandR: 0.90, bandM: 0.85, gem: 0x00c060, gemE: 0x00ff80 },
-  malachite: { label: "Malachite", band: 0xc8c8d8, bandR: 0.95, bandM: 0.90, gem: 0x1a8040, gemE: 0x30d070 },
-  verdigris: { label: "Verdigris", band: 0xb87333, bandR: 0.80, bandM: 0.75, gem: 0x4ab88a, gemE: 0x7affc0 },
-  jade:      { label: "Jade",      band: 0xe8e8f0, bandR: 0.98, bandM: 0.95, gem: 0x3a9060, gemE: 0x60d090 },
+  emerald:   { label: "Emerald",   band: 0xd4a520, gem: 0x00c060 },
+  malachite: { label: "Malachite", band: 0xc8c8d8, gem: 0x1a8040 },
+  verdigris: { label: "Verdigris", band: 0xb87333, gem: 0x4ab88a },
+  jade:      { label: "Jade",      band: 0xe8e8f0, gem: 0x3a9060 },
 };
 
 /* ── Three.js Ring Viewer ── */
-const RingViewer = ({ activeMetal }) => {
-  const mountRef  = useRef(null);
-  const sceneRef  = useRef({});
+const RingViewer = ({ activeMetal, modelUrl }) => {
+  const mountRef    = useRef(null);
 
+  // These refs hold the THREE objects across renders — never recreated
+  const rendererRef = useRef(null);
+  const sceneRef    = useRef(null);
+  const cameraRef   = useRef(null);
+  const frameRef    = useRef(null);       // animation frame ID
+  const modelRef    = useRef(null);       // the currently displayed object
+
+  // ── EFFECT 1: Run ONCE on mount — build the scene, renderer, lights, loop ──
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
 
+    // Scene
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(
+      45, el.clientWidth / el.clientHeight, 0.1, 1000
+    );
+    camera.position.z = 18;
+    cameraRef.current = camera;
+
+    // Renderer — created ONCE, canvas appended ONCE
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(el.clientWidth, el.clientHeight);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
     el.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
-    const scene  = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.01, 100);
-    camera.position.set(0, 2.2, 4.5);
+    // Lights — added once, stay forever
+    scene.add(new THREE.AmbientLight(0xffffff, 1));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+    dirLight.position.set(5, 10, 7.5);
+    scene.add(dirLight);
 
+    // Orbit controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.minDistance = 2;
-    controls.maxDistance = 8;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const key = new THREE.DirectionalLight(0xffffff, 2);
-    key.position.set(4, 6, 3);
-    scene.add(key);
-    const fill = new THREE.PointLight(0x88ffcc, 1.2, 15);
-    fill.position.set(-3, 2, -2);
-    scene.add(fill);
-
-    const ringGroup = new THREE.Group();
-    scene.add(ringGroup);
-
-    const buildRing = (k) => {
-      while (ringGroup.children.length) {
-        const c = ringGroup.children[0];
-        c.geometry?.dispose();
-        c.material?.dispose();
-        ringGroup.remove(c);
-      }
-      const m = METALS[k];
-      ringGroup.add(
-        new THREE.Mesh(
-          new THREE.TorusGeometry(1, 0.18, 64, 256),
-          new THREE.MeshStandardMaterial({ color: m.band, metalness: m.bandM, roughness: 1 - m.bandR })
-        )
-      );
-      const gem = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.18),
-        new THREE.MeshPhysicalMaterial({ color: m.gem, emissive: m.gemE, emissiveIntensity: 0.3, transmission: 0.9, roughness: 0, metalness: 0 })
-      );
-      gem.position.y = 1.1;
-      ringGroup.add(gem);
-
-      const glow = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.25),
-        new THREE.MeshBasicMaterial({ color: m.gemE, transparent: true, opacity: 0.06, side: THREE.BackSide })
-      );
-      glow.position.copy(gem.position);
-      ringGroup.add(glow);
-    };
-
-    buildRing(activeMetal || "emerald");
-    sceneRef.current = { buildRing };
-
-    let time = 0;
-    let raf;
+    // Animation loop — runs forever, rotates whatever modelRef.current points to
     const animate = () => {
-      raf = requestAnimationFrame(animate);
-      time += 0.016;
-      ringGroup.rotation.y += 0.008;
-      const gem  = ringGroup.children[1];
-      const glow = ringGroup.children[2];
-      if (gem)  gem.material.emissiveIntensity  = 0.25 + Math.sin(time * 3) * 0.10;
-      if (glow) glow.material.opacity           = 0.05 + Math.sin(time * 2) * 0.03;
+      frameRef.current = requestAnimationFrame(animate);
+      if (modelRef.current) modelRef.current.rotation.y += 0.005;
       controls.update();
       renderer.render(scene, camera);
     };
     animate();
 
+    // Resize handler
     const onResize = () => {
       if (!el) return;
       camera.aspect = el.clientWidth / el.clientHeight;
@@ -102,39 +74,98 @@ const RingViewer = ({ activeMetal }) => {
     };
     window.addEventListener("resize", onResize);
 
+    // Cleanup on unmount — runs only when the component is destroyed
     return () => {
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(frameRef.current);
       window.removeEventListener("resize", onResize);
       renderer.dispose();
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
     };
-  }, []);
+  }, []); // ← empty array: this runs ONCE only
 
-  /* Rebuild ring whenever metal changes */
+
+  // ── EFFECT 2: Swap the displayed model whenever activeMetal or modelUrl changes ──
   useEffect(() => {
-    if (sceneRef.current.buildRing && activeMetal) {
-      sceneRef.current.buildRing(activeMetal);
-    }
-  }, [activeMetal]);
+    const scene = sceneRef.current;
+    if (!scene) return;
 
-  return <div ref={mountRef} className={styles.ringViewerMount} />;
+    // Remove the previous model from the scene and dispose its resources
+    if (modelRef.current) {
+      scene.remove(modelRef.current);
+      modelRef.current.traverse((child) => {
+        if (child.isMesh) {
+          child.geometry?.dispose();
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => m.dispose());
+          } else {
+            child.material?.dispose();
+          }
+        }
+      });
+      modelRef.current = null;
+    }
+
+    if (modelUrl) {
+      // Load the AI-generated GLB model
+      const loader = new GLTFLoader();
+      loader.load(
+        modelUrl,
+        (gltf) => {
+          const model = gltf.scene;
+
+          // Auto-scale and center so any model fits the viewer
+          const box    = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size   = box.getSize(new THREE.Vector3());
+          const scale  = 12 / Math.max(size.x, size.y, size.z);
+          model.scale.setScalar(scale);
+          model.position.sub(center.multiplyScalar(scale));
+
+          scene.add(model);
+          modelRef.current = model;  // hand off to the animation loop
+        },
+        undefined,
+        (err) => console.error("GLTFLoader error:", err)
+      );
+    } else {
+      // No AI model yet — show the fallback torus ring
+      const mesh = new THREE.Mesh(
+        new THREE.TorusGeometry(5, 1.6, 32, 100),
+        new THREE.MeshStandardMaterial({
+          color:     METALS[activeMetal]?.band ?? 0xd4a520,
+          metalness: 1,
+          roughness: 0.1,
+        })
+      );
+      scene.add(mesh);
+      modelRef.current = mesh;  // hand off to the animation loop
+    }
+  }, [activeMetal, modelUrl]); // ← runs when metal or URL changes, but does NOT recreate the renderer
+
+
+  return <div ref={mountRef} style={{ width: "100%", height: "100%" }} />;
 };
 
-/* ── ProductCard ── */
-const ProductCard = ({ activeMetal, setActiveMetal, specs }) => {
+
+/* ── Main ProductCard Component ── */
+const ProductCard = ({ activeMetal, setActiveMetal, specs, modelUrl }) => {
   return (
     <>
       <div className={styles.productCard}>
-        <h2 className={styles.productCardTitle}>
-          Design: {specs?.name || "Emerald Ring"}
-        </h2>
 
-        {/* 3-D viewer replaces the static image */}
         <div className={styles.ringViewerWrapper}>
-          <RingViewer activeMetal={activeMetal} />
+          <RingViewer activeMetal={activeMetal} modelUrl={modelUrl} />
+          {modelUrl && (
+            <div style={{
+              position: "absolute", bottom: "10px", right: "10px",
+              fontSize: "10px", background: "rgba(212,165,32,0.2)",
+              padding: "2px 8px", borderRadius: "10px", color: "#ffd700",
+            }}>
+              AI Generated 3D
+            </div>
+          )}
         </div>
 
-        {/* Metal finish switcher */}
         <div className={styles.metalRow}>
           {Object.entries(METALS).map(([key, m]) => (
             <button
@@ -151,10 +182,10 @@ const ProductCard = ({ activeMetal, setActiveMetal, specs }) => {
       <div className={styles.measurementDiv}>Measurement Breakdown</div>
 
       <ul className={styles.measurementsList}>
-        <li><span>Ring Size :</span> <span>{specs?.size   || "20"}</span></li>
-        <li><span>Metal :</span>     <span>{specs?.metal  || "18k Gold"}</span></li>
-        <li><span>Stone :</span>     <span>{specs?.stone  || "Green Emerald"}</span></li>
-        <li><span>Total Weight :</span> <span>{specs?.weight || "3.2 g"}</span></li>
+        <li><span>Ring Size :</span>    <span>{specs?.size   || "—"}</span></li>
+        <li><span>Metal :</span>        <span>{specs?.metal  || "—"}</span></li>
+        <li><span>Stone :</span>        <span>{specs?.stone  || "—"}</span></li>
+        <li><span>Total Weight :</span> <span>{specs?.weight || "—"}</span></li>
       </ul>
 
       <div className={styles.costBox}>
@@ -163,7 +194,7 @@ const ProductCard = ({ activeMetal, setActiveMetal, specs }) => {
         </div>
         <div className={styles.costText}>
           <span className={styles.costLabel}>Estimated Cost:</span>
-          <span className={styles.costValue}>{specs?.cost || "3,150.00 $"}</span>
+          <span className={styles.costValue}>{specs?.cost || "Calculating..."}</span>
         </div>
       </div>
     </>

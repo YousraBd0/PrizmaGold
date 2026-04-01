@@ -7,14 +7,15 @@ const INITIAL_MESSAGES = [
   { role: "ai", text: "Welcome to PrizmaGold Studio ✦ I can turn your imagination into a bespoke jewellery design." },
   { role: "ai", text: 'Describe your masterpiece — e.g. "Modern rose gold ring with a floating pear-cut emerald" — and I\'ll generate a 3D preview.' },
 ];
-
+/** 
 const AI_REPLIES = [
   "Your design has been generated! Rotate the 3D preview on the left and switch metal finishes to compare options.",
   "Beautiful choice ✦ I've applied the stone and setting. Adjust the metal finish below the viewer to explore variations.",
   "Your bespoke piece is ready for preview. Measurements and estimated cost have been updated to reflect your specifications.",
-];
+];*/
 
-const AISidePanel = ({ onDesignUpdate }) => {
+const AISidePanel = ({ onDesignUpdate,currentSpecs }) => {
+  const sessionId = useRef(crypto.randomUUID());
   const [messages,   setMessages]   = useState(INITIAL_MESSAGES);
   const [inputValue, setInputValue] = useState("");
   const [isLoading,  setIsLoading]  = useState(false);
@@ -24,7 +25,7 @@ const AISidePanel = ({ onDesignUpdate }) => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async() => {
     const prompt = inputValue.trim();
     if (!prompt || isLoading) return;
 
@@ -36,12 +37,40 @@ const AISidePanel = ({ onDesignUpdate }) => {
     ]);
     setIsLoading(true);
 
+  try {
+    const res = await fetch('http://localhost:8080/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        prompt, 
+        sessionId: sessionId.current,
+        // Convert messages to the format GPT-4 expects
+        history: messages.map(m => ({ 
+          role: m.role === 'user' ? 'user' : 'assistant', 
+          content: m.text 
+        })),
+        currentSpecs: currentSpecs // Pass this as a prop from StudioPage
+      })
+    });
+
+    const data = await res.json();
+    
+    // Update the UI with real data
+    onDesignUpdate?.(data.specs, data.modelUrl); 
+    setMessages(prev => [...prev.slice(0, -1), { role: "ai", text: data.reply }]);
+  } catch (error) {
+    setMessages(prev => [...prev.slice(0, -1), { role: "ai", text: "Error connecting to server.", isError: true }]);
+  } finally {
+    setIsLoading(false);
+  }
+
+    /** 
     setTimeout(() => {
       onDesignUpdate?.(prompt);
       const reply = AI_REPLIES[Math.floor(Math.random() * AI_REPLIES.length)];
       setMessages(prev => [...prev.slice(0, -1), { role: "ai", text: reply }]);
       setIsLoading(false);
-    }, 1800);
+    }, 1800);*/
   };
 
   return (
