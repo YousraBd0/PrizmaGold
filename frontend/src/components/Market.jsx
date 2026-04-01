@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMetalPrice } from "../hooks/useMetalPrice";
 import {
   BarChart,
   Bar,
@@ -20,17 +21,7 @@ const C = {
   darkGreen: "#102C1D", // écriture STRONG BUY = vert sidebar
 };
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-const priceData = [
-  { time: "09:00 AM", gold: 2058, silver: 24.2 },
-  { time: "10:00 AM", gold: 2075, silver: 24.8 },
-  { time: "11:00 AM", gold: 2062, silver: 24.5 },
-  { time: "12:00 PM", gold: 2090, silver: 25.1 },
-  { time: "01:00 PM", gold: 2080, silver: 24.9 },
-  { time: "02:00 PM", gold: 2105, silver: 25.6 },
-  { time: "03:00 PM", gold: 2098, silver: 25.4 },
-  { time: "04:00 PM", gold: 2118, silver: 26.0 },
-];
+// Dynamic Data fetched from backend using useMetalPrice
 
 const forecastData = [
   { day: "Mon", ai: 2090, actual: 2085 },
@@ -157,6 +148,14 @@ export default function Market() {
   const [activeAsset, setActiveAsset] = useState("gold");
   const [animatedConf, setAnimatedConf] = useState(0);
 
+  const { prices, loading, error, fetchNewPrice } = useMetalPrice();
+  
+  // Use the latest price from the API if available. Otherwise, fallback.
+  const latestPrice = prices && prices.length > 0 
+    ? prices[0].priceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : "2,118.00";
+
+
   useEffect(() => {
     const timer = setTimeout(() => {
       let v = 0;
@@ -171,10 +170,19 @@ export default function Market() {
     return () => clearTimeout(timer);
   }, []);
 
-  const displayData = priceData.map((d) => ({
-    ...d,
-    value: activeAsset === "gold" ? d.gold : d.silver,
-  }));
+  const displayData = prices && prices.length > 0 
+    ? [...prices].reverse().map((p) => {
+        const d = new Date(p.recordedAt);
+        const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const silverVal = p.priceUsd * 0.012; // dynamic ratio fallback since DB only has XAU
+        return {
+          time: timeStr,
+          gold: p.priceUsd,
+          silver: silverVal,
+          value: activeAsset === "gold" ? p.priceUsd : silverVal
+        };
+      })
+    : [];
 
   return (
     <motion.div
@@ -311,6 +319,24 @@ export default function Market() {
                     marginTop: 5,
                   }}
                 >
+                  <button 
+                    onClick={fetchNewPrice}
+                    disabled={loading || activeAsset !== "gold"}
+                    style={{
+                      padding: "2px 8px",
+                      fontSize: 10,
+                      fontWeight: "bold",
+                      borderRadius: 4,
+                      border: "1px solid rgba(34,197,94,0.3)",
+                      background: "rgba(34,197,94,0.1)",
+                      color: "#22c55e",
+                      cursor: loading || activeAsset !== "gold" ? "not-allowed" : "pointer",
+                      marginRight: 8
+                    }}
+                  >
+                    {loading ? "UPDATING..." : "FETCH FROM API"}
+                  </button>
+                  {error && <span style={{color: "red", fontSize: 10, marginRight: 8}}>{error}</span>}
                   <span
                     style={{
                       width: 7,
@@ -349,7 +375,7 @@ export default function Market() {
                       fontFamily: "'DM Sans', sans-serif",
                     }}
                   >
-                    ${activeAsset === "gold" ? "2,118.00" : "26.00"}
+                    ${activeAsset === "gold" ? latestPrice : "26.00"}
                   </div>
                   <div
                     style={{ color: "#22c55e", fontSize: 13, fontWeight: 600 }}

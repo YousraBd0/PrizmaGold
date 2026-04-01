@@ -2,17 +2,17 @@ import "./styles/StudioPage.module.css";
 import "./App.css";
 import "./styles/styles.css";
 
-import StudioPage from "./component/StudioPage";
-import SideBar from "./component/SideBar";
-import Market from "./component/Market";
-import EditProfile from "./component/EditProfile";
+import StudioPage from "./components/StudioPage";
+import SideBar from "./components/SideBar";
+import Market from "./components/Market";
+import EditProfile from "./components/EditProfile";
 // ✅ Nouveaux composants récupérés depuis le pull
-import ProfileCard from "./component/ProfileCard";
-import StatsSection from "./component/StatsSection";
+import ProfileCard from "./components/ProfileCard";
+import StatsSection from "./components/StatsSection";
 // ✅ Ton composant Dashboard (page complète avec market data + trending)
-import Dashboard from "./component/Dashboard";
+import Dashboard from "./components/Dashboard";
 // ✅ TrendingPage
-import TrendingPage from "./component/TrendingPage";
+import TrendingPage from "./components/TrendingPage";
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -51,8 +51,8 @@ function Profile({ setActiveTab }) {
 function renderPage(activeTab, setActiveTab, darkMode, setDarkMode) {
   switch (activeTab) {
     case "dashboard":
-      return <Dashboard 
-        onViewTrending={() => setActiveTab("trending")} 
+      return <Dashboard
+        onViewTrending={() => setActiveTab("trending")}
         onViewAIStudio={() => setActiveTab("ai-studio")}
         onViewMarketIntel={() => setActiveTab("market-intel")}
         darkMode={darkMode}
@@ -80,8 +80,8 @@ function renderPage(activeTab, setActiveTab, darkMode, setDarkMode) {
       );
 
     default:
-      return <Dashboard 
-        onViewTrending={() => setActiveTab("trending")} 
+      return <Dashboard
+        onViewTrending={() => setActiveTab("trending")}
         onViewAIStudio={() => setActiveTab("ai-studio")}
         onViewMarketIntel={() => setActiveTab("market-intel")}
         darkMode={darkMode}
@@ -111,8 +111,8 @@ export default function App() {
         <SideBar activeTab={activeTab} setActiveTab={setActiveTab} />
       )}
 
-      <main 
-        className={darkMode ? "dark-mode" : ""} 
+      <main
+        className={darkMode ? "dark-mode" : ""}
         style={{ flex: 1, overflow: "hidden", position: "relative" }}
       >
         <AnimatePresence mode="wait">

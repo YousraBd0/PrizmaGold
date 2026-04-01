@@ -1,10 +1,17 @@
 import React from "react";
 import { FaMoon } from "react-icons/fa";
 import { useTrendingPreview, useClusters } from "../hooks/useTrends";
+import { useMetalPrice } from "../hooks/useMetalPrice";
 
 const Dashboard = ({ onViewTrending, onViewMarketIntel, onViewAIStudio, darkMode, toggleDarkMode }) => {
   const { products, loading, error } = useTrendingPreview();
   const { clusters } = useClusters();
+  const { prices: metalPrices, loading: priceLoading } = useMetalPrice();
+
+  const latestGoldPrice = metalPrices?.length > 0 ? metalPrices[0].priceUsd : null;
+  const formattedPrice = latestGoldPrice !== null 
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(latestGoldPrice)
+    : priceLoading ? "Loading..." : "--";
 
   const statusConfig = {
     rising: { emoji: "🔥", label: "Rising", color: "#2d6a4f" },
@@ -38,7 +45,7 @@ const Dashboard = ({ onViewTrending, onViewMarketIntel, onViewAIStudio, darkMode
                 <div className="market-title">GOLD VALUE</div>
               </div>
               <div className="market-price">
-                <span className="price">$2,345.10</span>
+                <span className="price">{formattedPrice}</span>
               </div>
             </div>
             {/* <div className="market-card">

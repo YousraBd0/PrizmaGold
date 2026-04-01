@@ -226,3 +226,9 @@ def get_clusters():
 
     clusters.sort(key=lambda x: x["avg_trend"], reverse=True)
     return {"status": "success", "clusters": clusters}
+
+if __name__ == "__main__":
+    import uvicorn
+    import sys, os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    uvicorn.run("trendsPipelining.main:app", host="0.0.0.0", port=8000, reload=True)
