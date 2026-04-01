@@ -107,9 +107,7 @@ export default function App() {
         transition: "background 0.3s, color 0.3s"
       }}
     >
-      {activeTab !== "trending" && (
-        <SideBar activeTab={activeTab} setActiveTab={setActiveTab} />
-      )}
+      <SideBar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main
         className={darkMode ? "dark-mode" : ""}

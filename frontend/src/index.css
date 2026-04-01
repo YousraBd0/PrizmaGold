@@ -110,12 +110,42 @@ input:focus {
   overflow-y: auto;
 }
 
+.dashboard-columns {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.dashboard-col-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dashboard-col-right {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-columns {
+    flex-direction: column;
+  }
+
+  .dashboard-col-right {
+    width: 100%;
+  }
+}
+
 /* ── Topbar ─────────────────────────────────────────── */
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .hello-title {
@@ -476,23 +506,26 @@ input:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
+  /* Réduit pour gagner de la place (était 24px) */
 }
 
 .tp-back-link {
   border: none;
   background: none;
-  font-size: 16px;
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0.15em;
-  color: #b29a63;
+  color: #a3a3a3;
   cursor: pointer;
   padding: 0;
-  font-family: "Playfair Display", serif;
+  font-family: "Inter", sans-serif;
+  text-transform: uppercase;
 }
 
 .tp-back-link:hover {
   border-color: transparent;
-  color: #0b301b;
+  color: #666;
 }
 
 .tp-page-title {
@@ -515,7 +548,8 @@ input:focus {
 
 /* ── Categories ────────────────────────────────────── */
 .tp-category-section {
-  margin-bottom: 32px;
+  margin-bottom: 12px;
+  /* Réduit pour rapprocher popular picks (était 32px) */
 }
 
 .tp-section-title {
@@ -530,11 +564,12 @@ input:focus {
 .tp-category-row {
   display: flex;
   justify-content: center;
-  /* ← centré */
-  flex-wrap: wrap;
-  overflow-x: auto;
+  flex-wrap: nowrap;
   padding: 4px 2px 2px 4px;
-  gap: 100px;
+  gap: 48px;
+  /* Adjusted to fit the screen */
+  width: 100%;
+  overflow-x: auto;
   scrollbar-width: none;
 }
 
@@ -543,18 +578,19 @@ input:focus {
 }
 
 .tp-category-card {
-  min-width: 120px;
+  min-width: 130px;
   max-width: 150px;
   flex: 1;
-
-  border-radius: 18px;
+  border-radius: 20px;
   border: 1px solid #e4dfd6;
-  background: #f9f7f4;
-  padding: 20px 18px 16px;
+  background: #ffffff;
+  padding: 16px 12px 12px;
+  /* Padding réduit en hauteur */
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  /* Espace réduit (était 12px) */
   cursor: pointer;
   transition:
     box-shadow 0.2s,
@@ -571,6 +607,7 @@ input:focus {
 .tp-category-card--active {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
+  /* The color overrides are at the bottom of the file in luxury overrides */
 }
 
 .tp-category-thumb {
@@ -590,10 +627,25 @@ input:focus {
 }
 
 .tp-category-label {
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.15em;
-  text-transform: capitalize;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 2px;
 }
+
+.tp-category-count {
+  font-family: "Playfair Display", serif;
+  font-size: 24px;
+  color: #0b301b;
+}
+
+/* Luxury active overrides for count */
+.tp-category-card--active .tp-category-count {
+  color: #ffffff !important;
+}
+
 
 /* ── Products ──────────────────────────────────────── */
 .tp-product-section {
@@ -758,8 +810,8 @@ input:focus {
 }
 
 .tp-product-image {
-  width: 50%;
-  height: 55%;
+  width: 30%;
+  height: 35%;
   object-fit: contain;
   object-position: center;
   border-radius: 16px;
@@ -874,8 +926,8 @@ input:focus {
 }
 
 .cluster-status {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -976,4 +1028,398 @@ input:focus {
 
 .dark-mode .icon-btn svg {
   color: #ffffff !important;
+}
+
+/* --- LUXURY OVERRIDES VIA USER FEEDBACK --- */
+
+/* Dashboard & Common Typography */
+.trending-header .section-title {
+  color: #0b2b18;
+  font-family: "Playfair Display", serif;
+  font-size: 24px;
+  font-weight: 400; /* Thinner weight */
+}
+
+.link-btn-gold {
+  background: transparent;
+  border: none;
+  color: #a48231;
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+/* Card Container (Trending & Dashboard) - AI Studio Real Design */
+.trend-card.luxury-static-bg,
+.tp-product-card.luxury-hover-bg {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  /* rounded-3xl */
+  background-color: #ffffff;
+  border: 1px solid #f5f5f4;
+  /* border-stone-100 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  /* shadow-sm */
+  transition: all 0.5s;
+  /* transition-all duration-500 */
+}
+
+.trend-card.luxury-static-bg:hover,
+.tp-product-card.luxury-hover-bg:hover {
+  transform: translateY(-8px);
+  /* whileHover={{ y: -8 }} */
+}
+
+/* Overlay de Luxe (Dégradé) */
+.trend-card.luxury-static-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to top, rgba(13, 40, 24, 0.95), rgba(13, 40, 24, 0.4), transparent);
+  opacity: 1;
+  /* directly visible per photo 1 */
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tp-product-card.luxury-hover-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to top, rgba(13, 40, 24, 0.9), rgba(13, 40, 24, 0.2), transparent);
+  opacity: 0;
+  transition: opacity 0.5s;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tp-product-card.luxury-hover-bg:hover::before {
+  opacity: 1;
+}
+
+/* Product Image Layer */
+.trend-img,
+.tp-product-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  transition: transform 0.7s;
+  /* transition-transform duration-700 */
+  z-index: 0;
+  position: relative;
+}
+
+.trend-card.luxury-static-bg:hover .trend-img,
+.tp-product-card.luxury-hover-bg:hover .tp-product-image {
+  transform: scale(1.1);
+  /* group-hover:scale-110 */
+}
+
+/* Text Overlays Layering */
+.trend-body.overlay-body {
+  z-index: 2;
+  /* keep text above the gradient overlay */
+}
+
+/* Trending Page specific overlay behavior */
+.tp-product-overlay {
+  z-index: 2;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  /* so it doesn't block hover on the card */
+}
+
+.tp-product-category-gold {
+  color: #d4af37;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  margin-top: 0;
+}
+
+.tp-product-title {
+  font-family: "Playfair Display", serif;
+  font-size: 18px;
+  color: #ffffff;
+  margin-bottom: 12px;
+  font-weight: 400;
+}
+
+.tp-product-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  color: #ccc;
+  font-size: 12px;
+  font-family: "Inter", sans-serif;
+}
+
+.tp-product-meta-row .tp-product-price {
+  color: #d4af37;
+  font-size: 16px;
+}
+
+.tp-product-card.luxury-hover-bg:hover .tp-product-overlay {
+  opacity: 1;
+}
+
+/* Gold Badge */
+.trend-badge-gold,
+.tp-luxury-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: rgba(212, 175, 55, 0.1);
+  /* bg-gold/10 */
+  backdrop-filter: blur(12px);
+  /* backdrop-blur-md */
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  /* border-gold/20 */
+  padding: 0.25rem 0.75rem;
+  /* px-3 py-1 */
+  border-radius: 9999px;
+  /* rounded-full */
+  color: #a48231;
+  font-size: 11px;
+  font-weight: 700;
+  transition: background-color 0.3s, color 0.3s;
+  z-index: 10;
+}
+
+.trend-card.luxury-static-bg:hover .trend-badge-gold,
+.tp-product-card.luxury-hover-bg:hover .tp-luxury-badge {
+  background-color: #d4af37;
+  /* group-hover:bg-gold */
+  color: #ffffff;
+}
+
+/* Clusters Market Intelligence */
+.cluster-card-inline {
+  background-color: #ffffff;
+  padding: 1.25rem 1.5rem !important;
+  /* Minimized padding */
+  border-radius: 1.5rem !important;
+  /* 24px */
+  border: 1px solid #f5f5f4 !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.5s !important;
+  position: relative;
+}
+
+.cluster-card-inline:hover {
+  border-color: rgba(212, 175, 55, 0.4) !important;
+}
+
+.cluster-card-header {
+  margin-bottom: 12px;
+  border-left: none !important;
+  position: relative;
+  padding-left: 12px;
+}
+
+/* Indicateur de Statut */
+.cluster-card-header::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  /* w-[2px] */
+  height: 1.5rem;
+  /* h-6 */
+  border-radius: 9999px;
+  /* rounded-full */
+  background-color: #2d6a4f;
+  /* fallback, normally handled by cfg.color if dynamically set */
+}
+
+/* Typographie Titre */
+.cluster-name {
+  font-family: serif !important;
+  font-size: 1.125rem !important;
+  /* Minimized from 1.5rem */
+  font-weight: 500 !important;
+  color: #0d2818 !important;
+  margin-bottom: 24px !important;
+  transition: color 0.3s !important;
+}
+
+.cluster-card-inline:hover .cluster-name {
+  color: #aa8c2c !important;
+  /* group-hover:text-gold-dark */
+}
+
+/* Cluster Meta Layout (Photo 1) */
+.cluster-meta {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 12px;
+}
+
+.cluster-score,
+.cluster-count {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.cluster-score-label,
+.cluster-count-label {
+  color: #999 !important;
+  font-size: 8px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+}
+
+.cluster-score-val {
+  color: #111 !important;
+  font-size: 16px !important;
+}
+
+.cluster-count-val {
+  color: #111 !important;
+  font-size: 16px !important;
+}
+
+/* Barre de Progression Luxe */
+.cluster-bar-bg {
+  position: relative;
+  height: 2px !important;
+  width: 50% !important;
+  /* Line only underneath the first part */
+  background-color: #fafaf9 !important;
+  border-radius: 9999px !important;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+/* Remplissage de Progression */
+.cluster-bar-fill {
+  position: absolute;
+  /* absolute */
+  top: 0;
+  bottom: 0;
+  left: 0;
+  /* inset-y-0 left-0 */
+  background-image: linear-gradient(to right, #d4af37, #aa8c2c) !important;
+  /* bg-gradient-to-r from-gold to-gold-dark */
+  background-color: transparent !important;
+  border-radius: 9999px;
+}
+
+/* Trending Page Categories (Photo 1) */
+.tp-section-title-centered {
+  font-family: "Playfair Display", serif;
+  font-size: 28px;
+  /* Réduit pour remonter les cartes */
+  color: #0b2b18;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 16px;
+  /* Espace réduit (était 20px) */
+  position: relative;
+  font-weight: 400;
+}
+
+.tp-section-title-centered::after {
+  content: "";
+  display: block;
+  width: 80px;
+  height: 1px;
+  background: #a48231;
+  margin: 12px auto 0;
+  /* Espace réduit (était 16px) */
+}
+
+.tp-category-card--active {
+  background: #092615 !important;
+  border-color: #092615 !important;
+}
+
+.tp-category-card--active .tp-category-label,
+.tp-category-card--active .tp-category-count {
+  color: #ffffff !important;
+}
+
+.tp-category-card--active .tp-category-thumb img {
+  filter: brightness(0) invert(0.8) sepia(1) hue-rotate(5deg) saturate(300%) !important;
+}
+
+/* Trending Page Product Carousel (Photo 3) */
+.tp-product-header-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.tp-section-title-left {
+  font-family: serif;
+  font-size: 16px !important;
+  /* Petit que l'image */
+  font-weight: 600 !important;
+  color: #0b2b18 !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 10px;
+}
+
+.tp-nav-arrows {
+  display: flex;
+  gap: 10px;
+}
+
+.tp-arrow-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #eaeaea;
+  background: #ffffff;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.tp-arrow-btn:hover {
+  border-color: #a48231;
+  color: #111;
+}
+
+.tp-product-carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding-bottom: 20px;
+  scroll-snap-type: x mandatory;
+}
+
+.tp-product-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.tp-product-carousel .tp-product-card {
+  flex: 0 0 calc(33.333% - 11px);
+  /* Show exactly 3 cards (16px gap * 2 / 3 approx = 11px) */
+  scroll-snap-align: start;
 }

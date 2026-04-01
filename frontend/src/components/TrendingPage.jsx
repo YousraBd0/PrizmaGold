@@ -10,7 +10,7 @@ import ring from "../assets/ring.png";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { useTrendingAll } from "../hooks/useTrends";
 
-const categoryIcons = {
+export const categoryIcons = {
   all: all,
   rings: ring,
   necklaces: neck,
@@ -34,13 +34,13 @@ export default function TrendingPage({ onBack }) {
     <div className="tp-page">
       <header className="tp-top-bar">
         <button className="tp-back-link" onClick={onBack}>
-          ← BACK
+          &larr; BACK TO DASHBOARD
         </button>
       </header>
 
       {/* ── Catégories dynamiques depuis l'API ── */}
       <section className="tp-category-section">
-        <h2 className="tp-section-title">EXPLORE BY CATEGORY</h2>
+        <h2 className="tp-section-title-centered">EXPLORE BY CATEGORY</h2>
         <div className="tp-category-row">
           {categories.map((cat) => (
             <button
@@ -51,12 +51,15 @@ export default function TrendingPage({ onBack }) {
                   ? " tp-category-card--active"
                   : "")
               }
-              onClick={() => setActiveCategory(cat.value)}
+              onClick={() => {
+                setActiveCategory(cat.value);
+                const el = document.getElementById('tp-carousel-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
             >
               <div className="tp-category-thumb">
                 <img src={categoryIcons[cat.value] || all} alt={cat.label} />
               </div>
-              <span className="tp-category-label">{cat.label}</span>
               <span className="tp-category-count">{cat.count}</span>
             </button>
           ))}
@@ -64,8 +67,20 @@ export default function TrendingPage({ onBack }) {
       </section>
 
       {/* ── Produits dynamiques depuis l'API ── */}
-      <section className="tp-product-section">
-        <h2 className="tp-section-title">TRENDING NOW</h2>
+      <section className="tp-product-section" id="tp-carousel-section">
+        <div className="tp-product-header-inline">
+          <h2 className="tp-section-title-left">MORE POPULAR </h2>
+          <div className="tp-nav-arrows">
+            <button className="tp-arrow-btn" onClick={() => {
+              const el = document.getElementById('tp-carousel');
+              if (el) el.scrollBy({ left: -(el.offsetWidth), behavior: 'smooth' });
+            }}>&lt;</button>
+            <button className="tp-arrow-btn" onClick={() => {
+              const el = document.getElementById('tp-carousel');
+              if (el) el.scrollBy({ left: el.offsetWidth, behavior: 'smooth' });
+            }}>&gt;</button>
+          </div>
+        </div>
 
         {loading && (
           <p
@@ -85,11 +100,11 @@ export default function TrendingPage({ onBack }) {
           </p>
         )}
 
-        <div className="tp-product-grid">
+        <div className="tp-product-carousel" id="tp-carousel">
           {!loading &&
             !error &&
             products.map((product) => (
-              <article key={product.id} className="tp-product-card">
+              <article key={product.id} className="tp-product-card luxury-hover-bg">
                 <div className="tp-product-image-wrapper">
                   {/* Image */}
                   {product.image_url ? (
@@ -111,7 +126,7 @@ export default function TrendingPage({ onBack }) {
                   {/* Badge Cluster — droit */}
                   {product.cluster_name &&
                     product.cluster_name !== "no_image" && (
-                      <div className="tp-badge-cluster">
+                      <div className="tp-luxury-badge">
                         {product.cluster_name}
                       </div>
                     )}
@@ -128,16 +143,22 @@ export default function TrendingPage({ onBack }) {
                     )}
                   </button>
 
-                  {/* Overlay titre + prix */}
+                  {/* Overlay titre + prix visibles au survol uniquement */}
                   <div className="tp-product-overlay">
-                    <h3 className="tp-product-title">
-                      {product.title.length > 35
-                        ? product.title.substring(0, 35) + "..."
-                        : product.title.toUpperCase()}
-                    </h3>
-                    <p className="tp-product-price">
-                      ${product.price.toFixed(2)}
+                    <p className="tp-product-category-gold">
+                      {product.cluster_name ? product.cluster_name.toUpperCase() : "FINE EARRINGS"}
                     </p>
+                    <h3 className="tp-product-title">
+                      {product.title.length > 50
+                        ? product.title.substring(0, 50) + "..."
+                        : product.title}
+                    </h3>
+                    <div className="tp-product-meta-row">
+                      <span>Trend Score: {product.trend_score ? product.trend_score.toFixed(1) : "0.7"}</span>
+                      <span className="tp-product-price">
+                        ${product.price ? product.price.toFixed(0) : "6800"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </article>
