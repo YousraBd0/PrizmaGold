@@ -149,9 +149,9 @@ export default function Market() {
   const [animatedConf, setAnimatedConf] = useState(0);
 
   const { prices, loading, error, fetchNewPrice } = useMetalPrice();
-  
+
   // Use the latest price from the API if available. Otherwise, fallback.
-  const latestPrice = prices && prices.length > 0 
+  const latestPrice = prices && prices.length > 0
     ? prices[0].priceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : "2,118.00";
 
@@ -170,18 +170,18 @@ export default function Market() {
     return () => clearTimeout(timer);
   }, []);
 
-  const displayData = prices && prices.length > 0 
+  const displayData = prices && prices.length > 0
     ? [...prices].reverse().map((p) => {
-        const d = new Date(p.recordedAt);
-        const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const silverVal = p.priceUsd * 0.012; // dynamic ratio fallback since DB only has XAU
-        return {
-          time: timeStr,
-          gold: p.priceUsd,
-          silver: silverVal,
-          value: activeAsset === "gold" ? p.priceUsd : silverVal
-        };
-      })
+      const d = new Date(p.recordedAt);
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const silverVal = p.priceUsd * 0.012; // dynamic ratio fallback since DB only has XAU
+      return {
+        time: timeStr,
+        gold: p.priceUsd,
+        silver: silverVal,
+        value: activeAsset === "gold" ? p.priceUsd : silverVal
+      };
+    })
     : [];
 
   return (
@@ -319,7 +319,7 @@ export default function Market() {
                     marginTop: 5,
                   }}
                 >
-                  <button 
+                  <button
                     onClick={fetchNewPrice}
                     disabled={loading || activeAsset !== "gold"}
                     style={{
@@ -336,7 +336,7 @@ export default function Market() {
                   >
                     {loading ? "UPDATING..." : "FETCH FROM API"}
                   </button>
-                  {error && <span style={{color: "red", fontSize: 10, marginRight: 8}}>{error}</span>}
+                  {error && <span style={{ color: "red", fontSize: 10, marginRight: 8 }}>{error}</span>}
                   <span
                     style={{
                       width: 7,

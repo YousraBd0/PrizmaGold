@@ -17,8 +17,15 @@ app.add_middleware(
 )
 
 # ── Sert les images statiquement ───────────────────────
-app.mount("/images", StaticFiles(directory="data/images/gold"),
-          name="images")
+# app.mount("/images", StaticFiles(directory="data/images/gold"),
+        #   name="images")
+        # APRÈS
+IMAGES_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "data", "images", "gold"
+)
+os.makedirs(IMAGES_DIR, exist_ok=True)
+app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
 
 # ── Chargement du CSV ──────────────────────────────────
 CSV_PATH = "data/gold_clustered.csv"
