@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMetalPrice } from "../hooks/useMetalPrice";
+import { useAiForecast } from "../hooks/useAiForecast";
 import {
   BarChart,
   Bar,
@@ -22,14 +23,6 @@ const C = {
 };
 
 // Dynamic Data fetched from backend using useMetalPrice
-
-const forecastData = [
-  { day: "Mon", ai: 2090, actual: 2085 },
-  { day: "Tue", ai: 2100, actual: 2095 },
-  { day: "Wed", ai: 2115, actual: 2110 },
-  { day: "Thu", ai: 2130, actual: null },
-  { day: "Fri", ai: 2145, actual: null },
-];
 
 // ── Tooltip ───────────────────────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }) => {
@@ -63,7 +56,13 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 // ── Gauge ─────────────────────────────────────────────────────────────────────
-function SentimentGauge() {
+function SentimentGauge({ signal }) {
+  let rotation = 0;
+  if (signal === "STRONG BUY") rotation = 58;
+  else if (signal === "BUY") rotation = 28;
+  else if (signal === "STRONG SELL") rotation = -58;
+  else if (signal === "SELL") rotation = -28;
+
   return (
     <div
       style={{
@@ -107,7 +106,7 @@ function SentimentGauge() {
           opacity="0.85"
         />
 
-        {/* Needle pointing toward BUY */}
+        {/* Needle pointing dynamically */}
         <motion.line
           x1="100"
           y1="100"
@@ -118,7 +117,7 @@ function SentimentGauge() {
           strokeLinecap="round"
           style={{ transformOrigin: "100px 100px" }}
           initial={{ rotate: -85 }}
-          animate={{ rotate: 58 }}
+          animate={{ rotate: rotation }}
           transition={{
             duration: 1.6,
             ease: [0.34, 1.56, 0.64, 1],
@@ -148,11 +147,22 @@ export default function Market() {
   const [activeAsset, setActiveAsset] = useState("gold");
   const [animatedConf, setAnimatedConf] = useState(0);
 
+  const { aiForecast, loading: aiLoading, error: aiError } = useAiForecast();
   const { prices, loading, error, fetchNewPrice } = useMetalPrice();
+
+  const currentForecast = aiForecast || {
+    signal: "NEUTRAL",
+    score: 0,
+    current_price: 0,
+    target_price: 0,
+    prophet_change: 0,
+    reasons: [],
+    forecastData: []
+  };
 
   // Use the latest price from the API if available. Otherwise, fallback.
   const latestPrice = prices && prices.length > 0
-    ? prices[0].priceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    ? prices[0].price_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : "2,118.00";
 
 
@@ -172,14 +182,16 @@ export default function Market() {
 
   const displayData = prices && prices.length > 0
     ? [...prices].reverse().map((p) => {
-      const d = new Date(p.recordedAt);
+      const d = new Date(p.recorded_at); // ✅ FIX
       const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const silverVal = p.priceUsd * 0.012; // dynamic ratio fallback since DB only has XAU
+
+      const silverVal = p.price_usd * 0.012; // ✅ FIX
+
       return {
         time: timeStr,
-        gold: p.priceUsd,
+        gold: p.price_usd,
         silver: silverVal,
-        value: activeAsset === "gold" ? p.priceUsd : silverVal
+        value: activeAsset === "gold" ? p.price_usd : silverVal
       };
     })
     : [];
@@ -499,10 +511,11 @@ export default function Market() {
                       marginBottom: 3,
                     }}
                   >
-                    February Target
+                    2-Day Forecast Target
                   </div>
                   <div
                     style={{
+
                       fontSize: 24,
                       fontWeight: 800,
                       color: "#102C1D",
@@ -510,14 +523,14 @@ export default function Market() {
                       lineHeight: 1.1,
                     }}
                   >
-                    $2,310.00
+                    ${currentForecast.target_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
                 {/* Mini chart aligné à droite */}
                 <div style={{ width: 110, height: 50, flexShrink: 0 }}>
                   <ResponsiveContainer width="100%" height={50}>
                     <LineChart
-                      data={forecastData}
+                      data={currentForecast.forecastData}
                       margin={{ top: 4, right: 2, bottom: 2, left: 2 }}
                     >
                       <Line
@@ -663,11 +676,11 @@ export default function Market() {
                     lineHeight: 1.2,
                   }}
                 >
-                  $2,110.00
+                  ${currentForecast.current_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <div
                   style={{
-                    color: "#22c55e",
+                    color: currentForecast.prophet_change >= 0 ? "#22c55e" : "#ef4444",
                     fontSize: 12,
                     fontWeight: 600,
                     marginTop: 6,
@@ -676,7 +689,8 @@ export default function Market() {
                     gap: 3,
                   }}
                 >
-                  <span>↗</span> +2.15% from current
+                  <span>{currentForecast.prophet_change >= 0 ? "↗" : "↘"}</span>
+                  {currentForecast.prophet_change > 0 ? "+" : ""}{currentForecast.prophet_change.toFixed(2)}% from current
                 </div>
               </div>
             </motion.div>
@@ -730,7 +744,7 @@ export default function Market() {
           </div>
 
           {/* Gauge */}
-          <SentimentGauge />
+          <SentimentGauge signal={currentForecast.signal} />
 
           {/* Labels SELL / NEUTRAL / BUY */}
           <div
@@ -757,7 +771,7 @@ export default function Market() {
             ))}
           </div>
 
-          {/* STRONG BUY — couleur vert sidebar */}
+          {/* AI Signal Label */}
           <motion.div
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -769,11 +783,11 @@ export default function Market() {
                 fontSize: 24,
                 fontWeight: 900,
                 fontFamily: "'Cinzel', serif",
-                color: C.darkGreen, // vert du sidebar
+                color: currentForecast.signal.includes("BUY") ? C.darkGreen : currentForecast.signal.includes("SELL") ? "#ef4444" : "#E8B40D", // Dynamically change color
                 letterSpacing: "0.06em",
               }}
             >
-              STRONG BUY
+              {currentForecast.signal}
             </span>
           </motion.div>
 
@@ -824,9 +838,7 @@ export default function Market() {
                 fontStyle: "italic",
               }}
             >
-              "Gold is showing strong momentum with institutional accumulations.
-              Forecast suggests a 2.1% upside within the AI price
-              recommendation. Increasing inventory position."
+              "Gold is showing {currentForecast.signal.includes("BUY") ? "strong momentum" : currentForecast.signal.includes("SELL") ? "downward pressure" : "neutral consolidation"}. Signal driven by: {currentForecast.reasons.join(", ")}. Forecast suggests a {Math.abs(currentForecast.prophet_change).toFixed(2)}% {currentForecast.prophet_change >= 0 ? "upside" : "downside"} within the AI target window."
             </p>
           </motion.div>
         </motion.div>

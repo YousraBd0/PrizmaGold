@@ -10,10 +10,19 @@ const Dashboard = ({ onViewTrending, onViewMarketIntel, onViewAIStudio, darkMode
   const { clusters } = useClusters();
   const { prices: metalPrices, loading: priceLoading } = useMetalPrice();
 
-  const latestGoldPrice = metalPrices?.length > 0 ? metalPrices[0].priceUsd : null;
-  const formattedPrice = latestGoldPrice !== null
-    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(latestGoldPrice)
-    : priceLoading ? "Loading..." : "--";
+  const latestGoldPrice =
+    metalPrices?.length > 0 && !isNaN(parseFloat(metalPrices[0].price_usd))
+      ? parseFloat(metalPrices[0].price_usd)
+      : null;
+  const formattedPrice =
+    latestGoldPrice !== null
+      ? new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(latestGoldPrice)
+      : priceLoading
+        ? "Loading..."
+        : "No data";
 
   const statusConfig = {
     rising: { emoji: "🔥", label: "Rising", color: "#2d6a4f" },

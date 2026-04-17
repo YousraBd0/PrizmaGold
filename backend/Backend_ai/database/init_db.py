@@ -7,18 +7,18 @@ DB_CONFIG = {
     "host"     : "localhost",
     "database" : "prizmagold",
     "user"     : "postgres",
-    "password" : "1234",
+    "password" : "yousra123",
     "port"     : 5432,
     "options"  : "-c client_encoding=UTF8"
 }
 
 def create_database():
     conn = psycopg2.connect(
-        host="localhost",
-        user="postgres",
-        password="1234",
-        port=5432,
-        options="-c client_encoding=UTF8"
+        host=DB_CONFIG["host"],
+        user=DB_CONFIG["user"],
+        password=DB_CONFIG["password"],
+        port=DB_CONFIG["port"],
+        options=DB_CONFIG["options"]
     )
     conn.autocommit = True
     cur = conn.cursor()
@@ -92,6 +92,40 @@ CREATE TABLE metal_prices (
 );
 """
 
+CREATE_FORECASTS_SQL = """
+DROP TABLE IF EXISTS forecasts CASCADE;
+
+CREATE TABLE forecasts (
+    forecast_id         BIGSERIAL       PRIMARY KEY,
+    metal_type          VARCHAR(20)     NOT NULL,
+    forecast_date       DATE            NOT NULL,
+    generated_at        TIMESTAMPTZ     DEFAULT NOW(),
+    yhat                NUMERIC(12,4)   NOT NULL,
+    yhat_lower          NUMERIC(12,4)   NOT NULL,
+    yhat_upper          NUMERIC(12,4)   NOT NULL,
+    model_version       VARCHAR(50)     DEFAULT 'prophet_v1',
+    training_end_date   DATE            NOT NULL
+);
+"""
+
+CREATE_ADVISORY_LOGS_SQL = """
+DROP TABLE IF EXISTS advisory_logs CASCADE;
+
+CREATE TABLE advisory_logs (
+    advisory_id         BIGSERIAL       PRIMARY KEY,
+    user_id             UUID,
+    forecast_id         BIGINT          REFERENCES forecasts(forecast_id) ON DELETE CASCADE,
+    metal_type          VARCHAR(20)     NOT NULL,
+    recommendation      VARCHAR(30)     NOT NULL,
+    change_pct          NUMERIC(6,3)    NOT NULL,
+    volatility_ratio    NUMERIC(6,3)    NOT NULL,
+    current_price       NUMERIC(12,4)   NOT NULL,
+    predicted_price     NUMERIC(12,4)   NOT NULL,
+    reasoning           TEXT,
+    generated_at        TIMESTAMPTZ     DEFAULT NOW()
+);
+"""
+
 INDEXES_SQL = [
     # jewelry_trends indexes
     "CREATE INDEX IF NOT EXISTS idx_trends_cluster    ON jewelry_trends(cluster_name);",
@@ -103,7 +137,14 @@ INDEXES_SQL = [
     "CREATE INDEX IF NOT EXISTS idx_prices_metal      ON metal_prices(metal_type);",
     "CREATE INDEX IF NOT EXISTS idx_prices_recorded   ON metal_prices(recorded_at DESC);",
     "CREATE INDEX IF NOT EXISTS idx_prices_metal_time ON metal_prices(metal_type, recorded_at DESC);",
+
+    # forecast indexes
+    "CREATE INDEX IF NOT EXISTS idx_forecast_metal_date ON forecasts(metal_type, forecast_date);",
+
+    # advisory logs indexes
+    "CREATE INDEX IF NOT EXISTS idx_advisory_metal    ON advisory_logs(metal_type);",
 ]
+
 
 def init_db():
     conn = psycopg2.connect(**DB_CONFIG)
@@ -115,6 +156,12 @@ def init_db():
     print("  Creating table: metal_prices...")
     cur.execute(CREATE_METAL_PRICES_SQL)
 
+    print("  Creating table: forecasts...")
+    cur.execute(CREATE_FORECASTS_SQL)
+
+    print("  Creating table: advisory_logs...")
+    cur.execute(CREATE_ADVISORY_LOGS_SQL)
+
     print("  Creating indexes...")
     for idx in INDEXES_SQL:
         cur.execute(idx)
@@ -122,7 +169,7 @@ def init_db():
     conn.commit()
     cur.close()
     conn.close()
-    print("OK Tables jewelry_trends + metal_prices creees avec succes")
+    print("OK Tables jewelry_trends, metal_prices, forecasts, advisory_logs creees avec succes")
 
 if __name__ == "__main__":
     create_database()

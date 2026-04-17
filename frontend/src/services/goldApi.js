@@ -25,3 +25,15 @@ export async function getLatestPrices() {
     }
     return await res.json()
 }
+
+export async function getLatestForecast() {
+    const res = await fetch("http://127.0.0.1:8080/api/prices/forecasts/latest", {
+        headers: {
+            "Accept": "application/json"
+        }
+    });
+    if (!res.ok) {
+        throw new Error("Failed to get latest forecast");
+    }
+    return await res.json();
+}

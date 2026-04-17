@@ -15,17 +15,23 @@ GOLD_API_KEY = os.getenv("GOLD_API_KEY")
 GOLD_API_URL = "https://www.goldapi.io/api/XAU/USD"
 
 def fetch_and_save() -> dict:
-    headers = {
-        "x-access-token": GOLD_API_KEY,
-        "Content-Type"  : "application/json"
-    }
+    if not GOLD_API_KEY or GOLD_API_KEY == "ta_clé_goldapi_ici":
+        import random
+        price_usd = round(2118.00 + random.uniform(-10, 10), 2)
+        price_eur = round(1950.00 + random.uniform(-5, 5), 2)
+        data = {"mocked": True, "price": price_usd, "price_gram_24k": price_eur}
+    else:
+        headers = {
+            "x-access-token": GOLD_API_KEY,
+            "Content-Type"  : "application/json"
+        }
 
-    response = requests.get(GOLD_API_URL, headers=headers, timeout=10)
-    response.raise_for_status()
+        response = requests.get(GOLD_API_URL, headers=headers, timeout=10)
+        response.raise_for_status()
 
-    data      = response.json()
-    price_usd = data.get("price")
-    price_eur = data.get("price_gram_24k")  # adapte si ta réponse API est différente
+        data      = response.json()
+        price_usd = data.get("price")
+        price_eur = data.get("price_gram_24k")  # adapte si ta réponse API est différente
 
     saved = save_metal_price(
         metal_type        = "XAU",

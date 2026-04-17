@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'database'))
 from fastapi import APIRouter, HTTPException
 from metal_price_repository import find_top10_by_recorded_at_desc
 from service import fetch_and_save
+from forecast_repository import get_latest_advisory_with_accuracy
 
 router = APIRouter(prefix="/api/prices")
 
@@ -22,3 +23,13 @@ def save_price():
 @router.get("/latest")
 def get_latest():
     return find_top10_by_recorded_at_desc()
+
+@router.get("/forecasts/latest")
+def get_latest_forecast():
+    try:
+        data = get_latest_advisory_with_accuracy("XAU")
+        if not data:
+            raise HTTPException(status_code=404, detail="No forecast data found")
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

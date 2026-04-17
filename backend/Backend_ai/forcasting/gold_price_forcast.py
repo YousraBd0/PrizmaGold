@@ -14,12 +14,19 @@ from prophet import Prophet
 import yfinance as yf
 import pandas_ta as ta   # Pour RSI, MACD, EMA
 
+import sys
+# Chemin absolu vers database/
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(BASE_DIR, 'database'))
+
+from forecast_repository import save_forecast, save_advisory_log
+
 warnings.filterwarnings("ignore")
 
 # ========================= CONFIG =========================
 OUTPUT_DIR = "data/forecasts"
 FORECAST_DAYS = 2 #2 jours pour prédiction de l
-HISTORY_DAYS = 730          # 2 ans pour bons indicateurs techniques
+HISTORY_DAYS = 365          # 1 year for now
 GOLD_TICKER = "GC=F"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -33,18 +40,45 @@ GRID_COLOR = "#2A2A3A"
 GREEN = "#2ECC71"
 RED = "#E74C3C"
 
-# ========================= FETCH REAL DATA =========================
-def fetch_gold_data(days: int = HISTORY_DAYS):
-    print("─── Récupération des prix réels de l’or ───")
-    end = pd.Timestamp.today()
-    start = end - pd.Timedelta(days=days + 60)
+# ========================= FETCH DATA FROM DB ONLY =========================
+def fetch_gold_data_from_db(days: int = HISTORY_DAYS):
+    print("─── Récupération des prix depuis la Base de Données ───")
+    from metal_price_repository import find_by_metal_type_daily_snapshot
+
+    prices = find_by_metal_type_daily_snapshot("XAU")
+
+    if not prices:
+        print("❌ Aucune donnée dans la DB. Lancez d'abord le bootstrap avec yFinance.")
+        return pd.DataFrame()
+
+    # Convert to DataFrame
+    df = pd.DataFrame(prices)
+    print(f"Raw data from DB: {len(df)} records")
+    print(f"Sample record: {df.iloc[0] if len(df) > 0 else 'No data'}")
     
-    df = yf.download(GOLD_TICKER, start=start, end=end, progress=False)
-    df = df[['Open', 'High', 'Low', 'Close']].reset_index()
-    df.columns = ['ds', 'Open', 'High', 'Low', 'y']  # y = Close pour Prophet
-    df["ds"] = pd.to_datetime(df["ds"]).dt.tz_localize(None)
+    df['ds'] = pd.to_datetime(df['recorded_at']).dt.tz_localize(None).dt.date
+    df['y'] = df['price_usd']
+    df['Open'] = df['y']  # Approximation
+    df['High'] = df['y']  # Approximation
+    df['Low'] = df['y']   # Approximation
+
+    print(f"After conversion: {len(df)} records")
+    print(f"Date range: {df['ds'].min()} to {df['ds'].max()}")
     
-    print(f"✅ {len(df)} jours chargés | Dernier prix : ${df['y'].iloc[-1]:.2f}")
+    # Clean data: remove NaN values and duplicates
+    df = df.dropna(subset=['y', 'ds'])
+    df = df[df['y'] > 0]  # Remove invalid prices
+    df = df.sort_values('ds').drop_duplicates(subset=['ds'], keep='last')
+    
+    print(f"After cleaning: {len(df)} records")
+    
+    # Sort and get last N days
+    df = df.tail(days).reset_index(drop=True)
+    df['ds'] = pd.to_datetime(df['ds'])  # Convert back to datetime for Prophet
+
+    print(f"Final dataset: {len(df)} records")
+
+    print(f"✅ {len(df)} jours chargés depuis DB | Dernier prix : ${df['y'].iloc[-1]:.2f}")
     return df
 
 # ========================= ADD TECHNICAL INDICATORS =========================
@@ -69,7 +103,19 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
 # ========================= PROPHET FORECAST =========================
 def run_prophet(df: pd.DataFrame):
     print("─── Entraînement Prophet (tendance globale) ───")
+    
+    # Ensure we have enough data
+    if len(df) < 30:
+        raise ValueError("Not enough data for Prophet training. Need at least 30 days.")
+    
     ts = df[['ds', 'y']].copy()
+    
+    # Final data validation
+    ts = ts.dropna()
+    if ts.empty:
+        raise ValueError("No valid data after cleaning.")
+    
+    print(f"Training Prophet with {len(ts)} data points...")
     
     model = Prophet(
         changepoint_prior_scale=0.05,
@@ -78,7 +124,21 @@ def run_prophet(df: pd.DataFrame):
         weekly_seasonality=True,
         interval_width=0.95
     )
-    model.fit(ts)
+    
+    try:
+        model.fit(ts)
+    except Exception as e:
+        print(f"Prophet fitting failed: {e}")
+        # Try with simpler model
+        print("Trying with simpler Prophet configuration...")
+        model = Prophet(
+            changepoint_prior_scale=0.1,
+            seasonality_prior_scale=1,
+            yearly_seasonality=False,
+            weekly_seasonality=False,
+            interval_width=0.95
+        )
+        model.fit(ts)
     
     future = model.make_future_dataframe(periods=FORECAST_DAYS)
     forecast = model.predict(future)
@@ -86,12 +146,65 @@ def run_prophet(df: pd.DataFrame):
     
     return model, forecast
 
+# ========================= AI CONFIDENCE CALCULATION =========================
+def calculate_ai_confidence(df: pd.DataFrame, forecast: pd.DataFrame, model):
+    """
+    Calculate AI confidence based on:
+    - Prophet model error (MAE/RMSE)
+    - Data stability (price volatility)
+    - Trend consistency (how well Prophet fits recent trend)
+    """
+    try:
+        # 1. Prophet Model Error (MAE/RMSE on historical data)
+        hist_forecast = forecast[forecast['y'].notna()].copy()
+        hist_forecast['y'] = hist_forecast['y'].astype(float)
+        if len(hist_forecast) > 30:  # Need enough data
+            mae = abs(hist_forecast['y'] - hist_forecast['yhat']).mean()
+            rmse = ((hist_forecast['y'] - hist_forecast['yhat']) ** 2).mean() ** 0.5
+            mean_price = hist_forecast['y'].mean()
+            error_ratio = (mae / mean_price) * 100  # Error as percentage of price
+            prophet_accuracy = max(0, 100 - error_ratio * 2)  # Scale to 0-100
+        else:
+            prophet_accuracy = 70  # Default if not enough data
+
+        # 2. Data Stability (lower volatility = higher confidence)
+        recent_prices = df['y'].tail(30).astype(float)
+        if len(recent_prices) > 1:
+            volatility = recent_prices.std() / recent_prices.mean() * 100
+            stability_score = max(0, 100 - volatility * 10)  # Lower volatility = higher score
+        else:
+            stability_score = 80
+
+        # 3. Trend Consistency (how well Prophet captures recent trend)
+        recent_actual = df['y'].tail(10).astype(float).values
+        recent_predicted = hist_forecast['yhat'].tail(10).values
+        if len(recent_actual) == len(recent_predicted):
+            trend_correlation = np.corrcoef(recent_actual, recent_predicted)[0, 1]
+            trend_consistency = (trend_correlation + 1) * 50  # Convert -1,1 to 0,100
+        else:
+            trend_consistency = 75
+
+        # Weighted average
+        confidence = (prophet_accuracy * 0.5 + stability_score * 0.3 + trend_consistency * 0.2)
+        confidence = round(min(100, max(0, confidence)), 1)
+
+        print(f"🤖 AI Confidence: {confidence}%")
+        print(f"   Prophet Accuracy: {prophet_accuracy:.1f}%")
+        print(f"   Data Stability: {stability_score:.1f}%")
+        print(f"   Trend Consistency: {trend_consistency:.1f}%")
+
+        return confidence
+
+    except Exception as e:
+        print(f"⚠️ Error calculating confidence: {e}")
+        return 75.0  # Default confidence
+
 # ========================= SIGNAL ENGINE =========================
-def generate_signals(df: pd.DataFrame, forecast: pd.DataFrame):
+def generate_signals(df: pd.DataFrame, forecast: pd.DataFrame, model):
     print("─── Génération des signaux BUY/SELL ───")
     
     last_row = df.iloc[-1]
-    current_price = last_row['y']
+    current_price = float(last_row['y'])
     
     # Prophet trend
     future_fc = forecast[forecast['y'].isna()]
@@ -107,15 +220,15 @@ def generate_signals(df: pd.DataFrame, forecast: pd.DataFrame):
     above_ema200 = current_price > last_row['EMA200']
     
     # Simple Breakout (prix > max des 10 derniers highs)
-    recent_high = df['High'].iloc[-20:-1].max()
+    recent_high = float(df['High'].iloc[-20:-1].max())
     breakout = current_price > recent_high * 1.005  # 0.5% au-dessus
     
     # Simple Double Top detection (basique : deux pics proches dans les 30 derniers jours)
     recent = df.iloc[-40:]
     peaks = recent[recent['High'] == recent['High'].rolling(5, center=True).max()]
     if len(peaks) >= 2:
-        p1 = peaks.iloc[-2]['High']
-        p2 = peaks.iloc[-1]['High']
+        p1 = float(peaks.iloc[-2]['High'])
+        p2 = float(peaks.iloc[-1]['High'])
         double_top = abs(p1 - p2) / p1 < 0.015 and p2 < current_price * 0.99  # deux tops proches + prix en baisse
     else:
         double_top = False
@@ -176,11 +289,15 @@ def generate_signals(df: pd.DataFrame, forecast: pd.DataFrame):
         signal = "NEUTRAL / HOLD"
         color = "#F1C40F"
     
+    # Calculate AI confidence
+    confidence = calculate_ai_confidence(df, forecast, model)
+    
     print(f"\n{'='*70}")
     print(f"PRIX ACTUEL          : ${current_price:,.2f}")
-    print(f"PRÉVISION PROPHET    : {prophet_change:+.1f}% sur 90 jours ({prophet_trend})")
+    print(f"PRÉVISION PROPHET    : {prophet_change:+.1f}% sur 2 jours ({prophet_trend})")
     print(f"SIGNAL FINAL         : {signal}")
     print(f"Score technique      : {score}")
+    print(f"AI CONFIDENCE        : {confidence}%")
     print(f"Raisons principales  : {', '.join(reasons[:4])}")
     print(f"{'='*70}")
     
@@ -189,6 +306,7 @@ def generate_signals(df: pd.DataFrame, forecast: pd.DataFrame):
         "score": score,
         "current_price": current_price,
         "prophet_change": prophet_change,
+        "confidence": confidence,
         "reasons": reasons
     }
 
@@ -243,19 +361,59 @@ def plot_with_indicators(df: pd.DataFrame, forecast: pd.DataFrame, signal_info):
 def run_pro_system():
     print("🚀 PrizmaGold Pro — AI Trading System (Gold)\n")
     
-    df = fetch_gold_data()
+    df = fetch_gold_data_from_db()
+    if df.empty:
+        print("❌ No historical data found. Please run bootstrap first.")
+        return
+        
     df = add_indicators(df)
     
     model, forecast = run_prophet(df)
     
-    signal_info = generate_signals(df, forecast)
+    signal_info = generate_signals(df, forecast, model)
     
     plot_with_indicators(df, forecast, signal_info)
     
     # Export CSV
     forecast.to_csv(f"{OUTPUT_DIR}/forecast_gold_pro.csv", index=False)
     
-    print("\n✅ Système terminé !")
+    # Save to Database
+    print("\n─── Sauvegarde en Base de Données ───")
+    training_end_date = df['ds'].iloc[-1].date()
+    
+    # Save future forecasts
+    future_fc = forecast[forecast['y'].isna()]
+    last_forecast_id = None
+    for _, row in future_fc.iterrows():
+        f_id = save_forecast(
+            metal_type="XAU",
+            forecast_date=row['ds'].date(),
+            yhat=float(row['yhat']),
+            yhat_lower=float(row['yhat_lower']),
+            yhat_upper=float(row['yhat_upper']),
+            training_end_date=training_end_date
+        )
+        if last_forecast_id is None:
+            last_forecast_id = f_id
+
+    # Compute volatility ratio safely
+    volatility = 0.0
+    if future_fc['yhat'].iloc[-1] != 0:
+        volatility = float((future_fc['yhat_upper'].iloc[-1] - future_fc['yhat_lower'].iloc[-1]) / future_fc['yhat'].iloc[-1])
+
+    if last_forecast_id:
+        save_advisory_log(
+            forecast_id=last_forecast_id,
+            metal_type="XAU",
+            recommendation=signal_info['signal'],
+            change_pct=float(signal_info['prophet_change']),
+            volatility_ratio=volatility,
+            current_price=float(signal_info['current_price']),
+            predicted_price=float(future_fc['yhat'].iloc[-1]),
+            reasoning=" | ".join(signal_info['reasons'])
+        )
+    
+    print("\n✅ Système terminé et sauvegardé en BD !")
     print(f"   Signal généré : **{signal_info['signal']}**")
     print(f"   Fichiers dans → {OUTPUT_DIR}/")
 

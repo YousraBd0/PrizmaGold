@@ -8,7 +8,7 @@ DB_CONFIG = {
     "host"     : "localhost",
     "database" : "prizmagold",
     "user"     : "postgres",
-    "password" : "1234",
+    "password" : "yousra123",
     "port"     : 5432,
     "options"  : "-c client_encoding=UTF8"
 }
@@ -53,9 +53,14 @@ def find_by_metal_type_daily_snapshot(metal_type: str):
 def save_metal_price(metal_type: str, price_usd: float,
                      price_eur: float, source_api: str,
                      raw_response: dict = None,
-                     is_daily_snapshot: bool = True) -> dict:
+                     is_daily_snapshot: bool = True,
+                     recorded_at: datetime = None) -> dict:
     conn = get_connection()
     cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    
+    # Use provided recorded_at or default to now
+    record_time = recorded_at if recorded_at is not None else datetime.utcnow()
+    
     cur.execute("""
         INSERT INTO metal_prices
             (metal_type, price_usd, price_eur, source_api,
@@ -67,7 +72,7 @@ def save_metal_price(metal_type: str, price_usd: float,
         price_usd,
         price_eur,
         source_api,
-        datetime.utcnow(),
+        record_time,
         is_daily_snapshot,
         psycopg2.extras.Json(raw_response) if raw_response else None
     ))
