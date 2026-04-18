@@ -159,20 +159,43 @@ def name_clusters(df, labels, img_indices, txt_features, vectorizer, k):
         top_indices  = mean_tfidf.argsort()[-10:][::-1]
         top_words    = set([feature_names[i] for i in top_indices])
 
-        # Cherche le meilleur mapping
-        best_name  = None
-        best_score = 0
-        for keywords, name in STYLE_MAPPING.items():
-            score = len(keywords & top_words)
-            if score > best_score:
-                best_score = score
-                best_name  = name
+        # --- GÉNÉRATION DYNAMIQUE DU NOM ---
+        # On prend les 3 meilleurs mots-clés du cluster
+        top3 = [feature_names[i].title() for i in top_indices if feature_names[i].isalpha()][:3]
+        
+        # On cherche si on a une catégorie majeure (Priorité aux plus spécifiques)
+        major_cat = "Jewelry"
+        for cat in ["Earring", "Necklace", "Bracelet", "Pendant", "Ring", "Chain"]:
+            if cat.lower() in top_words:
+                major_cat = cat + "s"
+                break
+        
+        # On construit une phrase descriptive
+        # Exemple : "Gold Diamond & Solitaire Rings"
+        other_keywords = [w for w in top3 if w.lower() not in major_cat.lower()][:2]
+        
+        if other_keywords:
+            best_name = f"{' & '.join(other_keywords)} {major_cat}"
+        else:
+            best_name = f"Fine {major_cat} Collection"
 
-        # Fallback si aucun match
-        if not best_name:
-            top3 = [feature_names[i].title()
-                    for i in mean_tfidf.argsort()[-3:][::-1]]
-            best_name = " & ".join(top3[:2])
+        # --- UNICITÉ INTELLIGENTE ---
+        # Si le nom existe déjà, on cherche un mot-clé "différenciateur"
+        if best_name in cluster_names.values():
+            # On cherche dans les mots suivants (index 3 à 10) un mot qui n'est pas dans le top3
+            potential_diffs = [feature_names[i].title() for i in top_indices if feature_names[i].title() not in top3]
+            for diff in potential_diffs:
+                new_name = f"{diff} {best_name}"
+                if new_name not in cluster_names.values():
+                    best_name = new_name
+                    break
+            
+            # Si toujours pas unique, on ajoute un suffixe (dernier recours)
+            counter = 1
+            base_name = best_name
+            while best_name in cluster_names.values():
+                best_name = f"{base_name} ({chr(64 + counter)})"
+                counter += 1
 
         cluster_names[cluster_id] = best_name
         print(f"  Cluster {cluster_id} ({len(cluster_items):3d} items) "

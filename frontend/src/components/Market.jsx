@@ -57,11 +57,13 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 // ── Gauge ─────────────────────────────────────────────────────────────────────
 function SentimentGauge({ signal }) {
-  let rotation = 0;
-  if (signal === "STRONG BUY") rotation = 58;
-  else if (signal === "BUY") rotation = 28;
-  else if (signal === "STRONG SELL") rotation = -58;
-  else if (signal === "SELL") rotation = -28;
+    let rotation = 0;
+    const s = signal.toUpperCase();
+    if (s.includes("STRONG BUY")) rotation = 58;
+    else if (s.includes("BUY")) rotation = 28;
+    else if (s.includes("STRONG SELL")) rotation = -58;
+    else if (s.includes("SELL")) rotation = -28;
+    else rotation = 0; // Neutral / Hold
 
   return (
     <div
@@ -106,15 +108,8 @@ function SentimentGauge({ signal }) {
           opacity="0.85"
         />
 
-        {/* Needle pointing dynamically */}
-        <motion.line
-          x1="100"
-          y1="100"
-          x2="100"
-          y2="28"
-          stroke="#102C1D"
-          strokeWidth="2.5"
-          strokeLinecap="round"
+        {/* Needle pointing dynamically (styled like a clock hand) */}
+        <motion.g
           style={{ transformOrigin: "100px 100px" }}
           initial={{ rotate: -85 }}
           animate={{ rotate: rotation }}
@@ -124,7 +119,23 @@ function SentimentGauge({ signal }) {
             delay: 0.4,
           }}
           filter="url(#needleGlow)"
-        />
+        >
+          {/* Main needle body */}
+          <line
+            x1="100"
+            y1="100"
+            x2="100"
+            y2="34"
+            stroke="#666"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          {/* Arrow tip (thinner) */}
+          <path
+            d="M 100 26 L 97 36 L 103 36 Z"
+            fill="#666"
+          />
+        </motion.g>
         {/* Pivot */}
         <circle cx="100" cy="100" r="7" fill="#E8B40D" />
         <circle cx="100" cy="100" r="3.5" fill="#F0F7ED" />
@@ -148,7 +159,16 @@ export default function Market() {
   const [animatedConf, setAnimatedConf] = useState(0);
 
   const { aiForecast, loading: aiLoading, error: aiError } = useAiForecast();
-  const { prices, loading, error, fetchNewPrice } = useMetalPrice();
+  const { prices, loading, error, fetchLiveOnly } = useMetalPrice();
+
+  const [livePrice, setLivePrice] = useState(null);
+
+  const handleFetchLive = async () => {
+    const data = await fetchLiveOnly();
+    if (data && data.price) {
+      setLivePrice(data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+  };
 
   const currentForecast = aiForecast || {
     signal: "NEUTRAL",
@@ -161,39 +181,46 @@ export default function Market() {
   };
 
   // Use the latest price from the API if available. Otherwise, fallback.
-  const latestPrice = prices && prices.length > 0
+  const displayPrice = livePrice || (prices && prices.length > 0
     ? prices[0].price_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : "2,118.00";
+    : "2,118.00");
 
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (!aiLoading && currentForecast.score) {
+      const target = currentForecast.score;
       let v = 0;
       const iv = setInterval(() => {
         v += 1.4;
-        if (v >= 88.4) {
-          setAnimatedConf(88.4);
+        if (v >= target) {
+          setAnimatedConf(target);
           clearInterval(iv);
         } else setAnimatedConf(parseFloat(v.toFixed(1)));
       }, 18);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+      return () => clearInterval(iv);
+    }
+  }, [aiLoading, currentForecast.score]);
 
   const displayData = prices && prices.length > 0
-    ? [...prices].reverse().map((p) => {
-      const d = new Date(p.recorded_at); // ✅ FIX
-      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      const silverVal = p.price_usd * 0.012; // ✅ FIX
-
-      return {
-        time: timeStr,
-        gold: p.price_usd,
-        silver: silverVal,
-        value: activeAsset === "gold" ? p.price_usd : silverVal
-      };
-    })
+    ? (() => {
+      const grouped = {};
+      [...prices].reverse().forEach((p) => {
+        const d = new Date(p.recorded_at);
+        // On crée une clé par jour (YYYY-MM-DD)
+        const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+        
+        // On privilégie le point de 9h si possible, sinon le dernier point du jour
+        const hour = d.getHours();
+        if (!grouped[dateStr] || hour === 9) {
+          grouped[dateStr] = {
+            time: dateStr,
+            gold: p.price_usd,
+            value: activeAsset === "gold" ? p.price_usd : p.price_usd * 0.012
+          };
+        }
+      });
+      return Object.values(grouped).slice(-10); // 10 derniers jours
+    })()
     : [];
 
   return (
@@ -237,56 +264,18 @@ export default function Market() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
           style={{
-            display: "flex",
-            gap: 2,
-            background: "#f5f5f0",
+            padding: "8px 18px",
+            background: `linear-gradient(135deg, ${C.gold}, ${C.goldLight})`,
             borderRadius: 50,
-            padding: 4,
-            border: `1px solid ${C.cardBorder}`,
+            color: "#fff",
+            fontSize: 11,
+            fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+            letterSpacing: "0.1em",
+            boxShadow: `0 2px 10px rgba(232,180,13,0.35)`,
           }}
         >
-          {["gold", "silver"].map((asset) => (
-            <motion.button
-              key={asset}
-              onClick={() => setActiveAsset(asset)}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                padding: "8px 18px",
-                borderRadius: 50,
-                border: "none",
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 600,
-                fontFamily: "'DM Sans', sans-serif",
-                background:
-                  activeAsset === asset
-                    ? asset === "gold"
-                      ? `linear-gradient(135deg, ${C.gold}, ${C.goldLight})`
-                      : "linear-gradient(135deg, #9ca3af, #d1d5db)"
-                    : "transparent",
-                color: activeAsset === asset ? "#fff" : "#888",
-                boxShadow:
-                  activeAsset === asset
-                    ? `0 2px 10px rgba(232,180,13,0.35)`
-                    : "none",
-                transition: "all 0.2s",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  display: "inline-block",
-                  background: asset === "gold" ? C.gold : "#9ca3af",
-                }}
-              />
-              {asset === "gold" ? "GOLD (XAU)" : "SILVER (XAG)"}
-            </motion.button>
-          ))}
+          GOLD (XAU) ONLY
         </motion.div>
       </div>
 
@@ -332,7 +321,7 @@ export default function Market() {
                   }}
                 >
                   <button
-                    onClick={fetchNewPrice}
+                    onClick={handleFetchLive}
                     disabled={loading || activeAsset !== "gold"}
                     style={{
                       padding: "2px 8px",
@@ -387,7 +376,7 @@ export default function Market() {
                       fontFamily: "'DM Sans', sans-serif",
                     }}
                   >
-                    ${activeAsset === "gold" ? latestPrice : "26.00"}
+                    ${activeAsset === "gold" ? displayPrice : "26.00"}
                   </div>
                   <div
                     style={{ color: "#22c55e", fontSize: 13, fontWeight: 600 }}
@@ -659,37 +648,16 @@ export default function Market() {
               <div style={{ marginTop: "auto" }}>
                 <div
                   style={{
-                    fontSize: 11,
-                    color: "#999",
-                    fontFamily: "'DM Sans', sans-serif",
-                    marginBottom: 3,
-                  }}
-                >
-                  Target Price
-                </div>
-                <div
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 800,
-                    color: "#102C1D",
-                    fontFamily: "'DM Sans', sans-serif",
-                    lineHeight: 1.2,
-                  }}
-                >
-                  ${currentForecast.current_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-                <div
-                  style={{
                     color: currentForecast.prophet_change >= 0 ? "#22c55e" : "#ef4444",
-                    fontSize: 12,
-                    fontWeight: 600,
+                    fontSize: 14,
+                    fontWeight: 700,
                     marginTop: 6,
                     display: "flex",
                     alignItems: "center",
-                    gap: 3,
+                    gap: 4,
                   }}
                 >
-                  <span>{currentForecast.prophet_change >= 0 ? "↗" : "↘"}</span>
+                  <span style={{ fontSize: 18 }}>{currentForecast.prophet_change >= 0 ? "↗" : "↘"}</span>
                   {currentForecast.prophet_change > 0 ? "+" : ""}{currentForecast.prophet_change.toFixed(2)}% from current
                 </div>
               </div>
@@ -780,10 +748,14 @@ export default function Market() {
           >
             <span
               style={{
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: 900,
                 fontFamily: "'Cinzel', serif",
-                color: currentForecast.signal.includes("BUY") ? C.darkGreen : currentForecast.signal.includes("SELL") ? "#ef4444" : "#E8B40D", // Dynamically change color
+                color: currentForecast.signal.includes("BUY") 
+                  ? C.darkGreen 
+                  : currentForecast.signal.includes("SELL") 
+                    ? "#ef4444" 
+                    : "#1a1a1a", // Noir pour Neutral / Hold
                 letterSpacing: "0.06em",
               }}
             >
@@ -798,11 +770,11 @@ export default function Market() {
             transition={{ delay: 1.2, duration: 0.4 }}
             style={{
               background: "#FEF9E5",
-              border: `1px solid rgba(137,190,159,0.4)`,
+              border: `1.5px solid #ef4444`,
               borderRadius: 14,
               padding: "18px 16px 16px",
               position: "relative",
-              marginTop: 10,
+              marginTop: 25,
               width: "100%",
             }}
           >
@@ -838,7 +810,9 @@ export default function Market() {
                 fontStyle: "italic",
               }}
             >
-              "Gold is showing {currentForecast.signal.includes("BUY") ? "strong momentum" : currentForecast.signal.includes("SELL") ? "downward pressure" : "neutral consolidation"}. Signal driven by: {currentForecast.reasons.join(", ")}. Forecast suggests a {Math.abs(currentForecast.prophet_change).toFixed(2)}% {currentForecast.prophet_change >= 0 ? "upside" : "downside"} within the AI target window."
+              "Gold is {currentForecast.signal.includes("BUY") ? "showing bullish strength with institutional accumulation" : currentForecast.signal.includes("SELL") ? "facing downward pressure and market exhaustion" : "currently in a phase of neutral consolidation"}. 
+              Analysis suggests a {Math.abs(currentForecast.prophet_change).toFixed(1)}% {currentForecast.prophet_change >= 0 ? "upside potential" : "downside risk"} within the AI recommendation window. 
+              Key drivers: {currentForecast.reasons.slice(0, 3).join(", ")}."
             </p>
           </motion.div>
         </motion.div>

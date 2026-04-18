@@ -14,6 +14,18 @@ export async function fetchAndSaveGoldPrice() {
     return await res.json()
 }
 
+export async function fetchLiveGoldPrice() {
+    const res = await fetch("http://127.0.0.1:8080/api/prices/live", {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+    if (!res.ok) {
+        throw new Error("Failed to fetch live price");
+    }
+    return await res.json()
+}
+
 export async function getLatestPrices() {
     const res = await fetch("http://127.0.0.1:8080/api/prices/latest", {
         headers: {

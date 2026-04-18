@@ -1,10 +1,16 @@
-__pycache__/
-*.py[cod]
-*$py.class
-venv/
-.env
-data/forecasts/*.png
-data/forecasts/*.csv
+# AI Data & Models
+backend/Backend_ai/data/
+backend/Backend_ai/trendsPipelining/__pycache__/
+backend/Backend_ai/forcasting/__pycache__/
+*.npy
+*.npz
+*.pkl
+
+# Generic
 node_modules/
 dist/
+.env
+venv/
+.venv/
+__pycache__/
 .DS_Store

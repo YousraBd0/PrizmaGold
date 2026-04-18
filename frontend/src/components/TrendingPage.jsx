@@ -145,12 +145,9 @@ export default function TrendingPage({ onBack }) {
 
                   {/* Overlay titre + prix visibles au survol uniquement */}
                   <div className="tp-product-overlay">
-                    <p className="tp-product-category-gold">
-                      {product.cluster_name ? product.cluster_name.toUpperCase() : "FINE EARRINGS"}
-                    </p>
-                    <h3 className="tp-product-title">
-                      {product.title.length > 50
-                        ? product.title.substring(0, 50) + "..."
+                    <h3 className="tp-product-title" title={product.title}>
+                      {product.title.length > 65
+                        ? product.title.substring(0, 62) + "..."
                         : product.title}
                     </h3>
                     <div className="tp-product-meta-row">

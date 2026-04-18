@@ -24,9 +24,9 @@ OUTPUT_CSV = "data/gold_preprocessed.csv"
 IMAGES_DIR = "data/images/gold"
 
 IMG_SIZE    = 512
-MAX_IMAGES  = 200
+MAX_IMAGES  = 5000
 MAX_WORKERS = 8
-MAX_FILES   = 3      # mettre None pour full dataset
+MAX_FILES   = None    # mettre None pour full dataset
 
 # Patterns
 GOLD_PATTERN    = r"(10k|14k|18k|21k|22k|24k|10kt|14kt|18kt|karat|yellow gold|white gold|rose gold|solid gold)"
@@ -54,7 +54,7 @@ def load_and_filter():
     # - If the file is in JSONL format (one JSON object per line),
     #   read it line by line
     for filepath in files:
-        print(f"   → {filepath.name}")
+        count_before = len(all_records)
         with open(filepath, "r", encoding="utf-8") as f:
             try:
                 data = json.load(f)
@@ -67,10 +67,10 @@ def load_and_filter():
                 for line in f:
                     if line.strip():
                         all_records.append(json.loads(line))
+        print(f"   → {filepath.name} : +{len(all_records) - count_before} products")
 
-    # Convert raw data into a structured tabular format (Pandas DataFrame)
     df = pd.DataFrame(all_records)
-    print(f"✅ Total loaded products: {len(df)}")
+    print(f"\n✅ Total loaded products: {len(df)}")
 
     # Ensure the 'title' column exists
     if "title" not in df.columns:
@@ -314,7 +314,7 @@ def resize_images(df):
         try:
             img = cv2.imread(path)
             if img is not None:
-                img = cv2.resize(img, (IMG_SIZE, IMG_SIZE),Image.LANCZOS)
+                img = cv2.resize(img, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_LANCZOS4)
                 cv2.imwrite(path, img)
                 success += 1
             else:

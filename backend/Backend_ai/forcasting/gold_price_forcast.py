@@ -410,7 +410,8 @@ def run_pro_system():
             volatility_ratio=volatility,
             current_price=float(signal_info['current_price']),
             predicted_price=float(future_fc['yhat'].iloc[-1]),
-            reasoning=" | ".join(signal_info['reasons'])
+            reasoning=" | ".join(signal_info['reasons']),
+            confidence=float(signal_info['confidence'])
         )
     
     print("\n✅ Système terminé et sauvegardé en BD !")

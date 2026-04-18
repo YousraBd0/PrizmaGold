@@ -39,13 +39,13 @@ def save_forecast(metal_type: str, forecast_date: date, yhat: float, yhat_lower:
     conn.close()
     return forecast_id
 
-def save_advisory_log(forecast_id: int, metal_type: str, recommendation: str, change_pct: float, volatility_ratio: float, current_price: float, predicted_price: float, reasoning: str) -> int:
+def save_advisory_log(forecast_id: int, metal_type: str, recommendation: str, change_pct: float, volatility_ratio: float, current_price: float, predicted_price: float, reasoning: str, confidence: float) -> int:
     conn = get_connection()
     cur  = conn.cursor()
     cur.execute("""
         INSERT INTO advisory_logs
-            (user_id, forecast_id, metal_type, recommendation, change_pct, volatility_ratio, current_price, predicted_price, reasoning, generated_at)
-        VALUES (NULL, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            (user_id, forecast_id, metal_type, recommendation, change_pct, volatility_ratio, current_price, predicted_price, reasoning, confidence, generated_at)
+        VALUES (NULL, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING advisory_id;
     """, (
         forecast_id,
@@ -56,6 +56,7 @@ def save_advisory_log(forecast_id: int, metal_type: str, recommendation: str, ch
         current_price,
         predicted_price,
         reasoning,
+        confidence,
         datetime.utcnow()
     ))
     advisory_id = cur.fetchone()[0]
@@ -70,7 +71,7 @@ def get_latest_advisory_with_accuracy(metal_type: str):
     
     # 1. Fetch latest advisory log
     cur.execute("""
-        SELECT advisory_id, forecast_id, metal_type, recommendation, change_pct, volatility_ratio, current_price, predicted_price, reasoning, generated_at
+        SELECT advisory_id, forecast_id, metal_type, recommendation, change_pct, volatility_ratio, current_price, predicted_price, reasoning, confidence, generated_at
         FROM advisory_logs
         WHERE metal_type = %s
         ORDER BY generated_at DESC
@@ -120,7 +121,7 @@ def get_latest_advisory_with_accuracy(metal_type: str):
 
     return {
         "signal": latest_advisory["recommendation"],
-        "score": 88.4, # AI confidence percentage
+        "score": float(latest_advisory["confidence"]) if latest_advisory["confidence"] else 75.0,
         "current_price": float(latest_advisory["current_price"]),
         "target_price": float(latest_advisory["predicted_price"]),
         "prophet_change": float(latest_advisory["change_pct"]),

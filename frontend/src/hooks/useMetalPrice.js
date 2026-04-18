@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getLatestPrices, fetchAndSaveGoldPrice } from "../services/goldApi";
+import { getLatestPrices, fetchAndSaveGoldPrice, fetchLiveGoldPrice } from "../services/goldApi";
 
 export function useMetalPrice() {
     const [prices, setPrices] = useState([]);
@@ -32,9 +32,24 @@ export function useMetalPrice() {
         }
     };
 
+    const fetchLiveOnly = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await fetchLiveGoldPrice();
+            // We just return the data so the component can update its local "live" state
+            // without affecting the historical chart prices list.
+            return data;
+        } catch (err) {
+            setError(err.message || "Failed to fetch live price.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         refreshPrices();
     }, []);
 
-    return { prices, loading, error, refreshPrices, fetchNewPrice };
+    return { prices, loading, error, refreshPrices, fetchNewPrice, fetchLiveOnly };
 }

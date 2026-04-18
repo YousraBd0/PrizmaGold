@@ -113,10 +113,9 @@ def get_all_trends(
 
     # Filtre catégorie
     if category != "all":
-        mask = df["title"].str.lower().str.contains(
-            category.rstrip("s"),   # "rings" → "ring"
-            na=False
-        )
+        keyword = category.rstrip("s")
+        # On utilise \b pour que "ring" ne match pas "earring"
+        mask = df["title"].str.contains(rf"\b{keyword}\b", case=False, regex=True, na=False)
         df = df[mask]
 
     # Filtre score minimum

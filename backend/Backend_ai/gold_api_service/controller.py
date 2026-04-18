@@ -20,6 +20,15 @@ def save_price():
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"GoldAPI error: {str(e)}")
 
+@router.get("/live")
+def get_live_price():
+    """Returns the current price without saving to the database."""
+    from service import fetch_live_only
+    try:
+        return fetch_live_only()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
 @router.get("/latest")
 def get_latest():
     return find_top10_by_recorded_at_desc()
