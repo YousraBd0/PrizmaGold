@@ -11,6 +11,8 @@ import {
   Tooltip,
   LineChart,
   Line,
+  Cell,
+  LabelList,
 } from "recharts";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -57,13 +59,13 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 // ── Gauge ─────────────────────────────────────────────────────────────────────
 function SentimentGauge({ signal }) {
-    let rotation = 0;
-    const s = signal.toUpperCase();
-    if (s.includes("STRONG BUY")) rotation = 58;
-    else if (s.includes("BUY")) rotation = 28;
-    else if (s.includes("STRONG SELL")) rotation = -58;
-    else if (s.includes("SELL")) rotation = -28;
-    else rotation = 0; // Neutral / Hold
+  let rotation = 0;
+  const s = signal.toUpperCase();
+  if (s.includes("STRONG BUY")) rotation = 58;
+  else if (s.includes("BUY")) rotation = 28;
+  else if (s.includes("STRONG SELL")) rotation = -58;
+  else if (s.includes("SELL")) rotation = -28;
+  else rotation = 0; // Neutral / Hold
 
   return (
     <div
@@ -164,10 +166,8 @@ export default function Market() {
   const [livePrice, setLivePrice] = useState(null);
 
   const handleFetchLive = async () => {
-    const data = await fetchLiveOnly();
-    if (data && data.price) {
-      setLivePrice(data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-    }
+    // fetchNewPrice enregistre en DB et rafraîchit la liste complète
+    await fetchNewPrice();
   };
 
   const currentForecast = aiForecast || {
@@ -180,10 +180,19 @@ export default function Market() {
     forecastData: []
   };
 
+  // ── MARKET STATUS LOGIC ──
+  const now = new Date();
+  const day = now.getDay(); // 0 = Dimanche, 6 = Samedi
+  const isWeekend = (day === 0 || day === 6);
+  const marketStatus = isWeekend ? "CLOSED" : "OPEN";
+
   // Use the latest price from the API if available. Otherwise, fallback.
-  const displayPrice = livePrice || (prices && prices.length > 0
+  const rawPrice = livePrice || (prices && prices.length > 0
     ? prices[0].price_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : "2,118.00");
+    : "4,829.31");
+
+  const displayPrice = isWeekend ? rawPrice : rawPrice;
+  const priceLabel = isWeekend ? "Friday Close" : "Live Price";
 
 
   useEffect(() => {
@@ -208,18 +217,44 @@ export default function Market() {
         const d = new Date(p.recorded_at);
         // On crée une clé par jour (YYYY-MM-DD)
         const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
-        
+
         // On privilégie le point de 9h si possible, sinon le dernier point du jour
         const hour = d.getHours();
-        if (!grouped[dateStr] || hour === 9) {
+        // On prend le point s'il n'existe pas encore pour ce jour, 
+        // ou si c'est celui de 9h (notre référence), 
+        // ou si ce point est plus récent que celui déjà stocké.
+        if (!grouped[dateStr] || hour === 9 || d > grouped[dateStr].rawDate) {
           grouped[dateStr] = {
             time: dateStr,
-            gold: p.price_usd,
+            rawDate: d,
+        gold: p.price_usd,
             value: activeAsset === "gold" ? p.price_usd : p.price_usd * 0.012
           };
         }
       });
-      return Object.values(grouped).slice(-10); // 10 derniers jours
+      const result = [];
+      const today = new Date();
+      
+      // On parcourt les 10 derniers jours calendaires
+      for (let i = 9; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(today.getDate() - i);
+        const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+        
+        if (grouped[dateStr]) {
+          result.push(grouped[dateStr]);
+        } else {
+          // Si trou de donnée (week-end), on répète le dernier prix connu
+          const lastVal = result.length > 0 ? result[result.length - 1].gold : 4829.31;
+          result.push({
+            time: dateStr,
+            gold: lastVal,
+            value: activeAsset === "gold" ? lastVal : lastVal * 0.012,
+            isInterpolated: true
+          });
+        }
+      }
+      return result;
     })()
     : [];
 
@@ -245,19 +280,49 @@ export default function Market() {
           justifyContent: "space-between",
         }}
       >
-        <motion.h1
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
-          style={{
-            fontSize: 30,
-            fontWeight: 700,
-            color: "#1a1a1a",
-            fontFamily: "'Cinzel', serif",
-            margin: 0,
-          }}
-        >
-          Market Intel
-        </motion.h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <motion.h1
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            style={{
+              fontSize: 30,
+              fontWeight: 700,
+              color: "#1a1a1a",
+              fontFamily: "'Cinzel', serif",
+              margin: 0,
+            }}
+          >
+            Market Intel
+          </motion.h1>
+
+          {/* BADGE STATUT DU MARCHÉ */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              padding: "4px 10px",
+              borderRadius: "20px",
+              fontSize: "10px",
+              fontWeight: "800",
+              letterSpacing: "0.5px",
+              backgroundColor: isWeekend ? "#fee2e2" : "#dcfce7",
+              color: isWeekend ? "#dc2626" : "#166534",
+              border: `1px solid ${isWeekend ? "#fecaca" : "#bbf7d0"}`,
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              marginTop: 2
+            }}
+          >
+            <div style={{ 
+              width: 6, 
+              height: 6, 
+              borderRadius: "50%", 
+              backgroundColor: isWeekend ? "#dc2626" : "#22c55e" 
+            }} />
+            MARKET {marketStatus}
+          </motion.div>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, x: 16 }}
@@ -406,9 +471,37 @@ export default function Market() {
                 <Bar
                   dataKey="value"
                   name={activeAsset}
-                  fill={activeAsset === "gold" ? C.gold : "#b0b8c4"}
                   radius={[6, 6, 0, 0]}
-                />
+                >
+                  {displayData.map((entry, index) => {
+                    let fillColor = activeAsset === "gold" ? C.gold : "#b0b8c4";
+                    if (entry.isForecast) fillColor = "#22c55e";
+                    if (entry.isInterpolated) fillColor = "#d1d5db";
+
+                    return (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={fillColor}
+                        fillOpacity={entry.isForecast ? 0.8 : (entry.isInterpolated ? 0.5 : 1)}
+                        stroke={entry.isForecast ? "#22c55e" : "none"}
+                        strokeDasharray={entry.isForecast ? "4 4" : "0"}
+                      />
+                    );
+                  })}
+                  <LabelList 
+                    dataKey="value" 
+                    content={(props) => {
+                      const { x, y, width, index } = props;
+                      const entry = displayData[index];
+                      if (entry && entry.isInterpolated) {
+                        return (
+                          <circle cx={x + width/2} cy={y - 10} r={3} fill="#dc2626" />
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </motion.div>
@@ -751,10 +844,10 @@ export default function Market() {
                 fontSize: 18,
                 fontWeight: 900,
                 fontFamily: "'Cinzel', serif",
-                color: currentForecast.signal.includes("BUY") 
-                  ? C.darkGreen 
-                  : currentForecast.signal.includes("SELL") 
-                    ? "#ef4444" 
+                color: currentForecast.signal.includes("BUY")
+                  ? C.darkGreen
+                  : currentForecast.signal.includes("SELL")
+                    ? "#ef4444"
                     : "#1a1a1a", // Noir pour Neutral / Hold
                 letterSpacing: "0.06em",
               }}
@@ -810,8 +903,8 @@ export default function Market() {
                 fontStyle: "italic",
               }}
             >
-              "Gold is {currentForecast.signal.includes("BUY") ? "showing bullish strength with institutional accumulation" : currentForecast.signal.includes("SELL") ? "facing downward pressure and market exhaustion" : "currently in a phase of neutral consolidation"}. 
-              Analysis suggests a {Math.abs(currentForecast.prophet_change).toFixed(1)}% {currentForecast.prophet_change >= 0 ? "upside potential" : "downside risk"} within the AI recommendation window. 
+              "Gold is {currentForecast.signal.includes("BUY") ? "showing bullish strength with institutional accumulation" : currentForecast.signal.includes("SELL") ? "facing downward pressure and market exhaustion" : "currently in a phase of neutral consolidation"}.
+              Analysis suggests a {Math.abs(currentForecast.prophet_change).toFixed(1)}% {currentForecast.prophet_change >= 0 ? "upside potential" : "downside risk"} within the AI recommendation window.
               Key drivers: {currentForecast.reasons.slice(0, 3).join(", ")}."
             </p>
           </motion.div>

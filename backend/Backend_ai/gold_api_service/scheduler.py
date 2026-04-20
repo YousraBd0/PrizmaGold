@@ -33,4 +33,10 @@ def start_scheduler():
     scheduler.add_job(run_forecast_job, "cron", hour=9, minute=5)
     
     scheduler.start()
+
+    # --- NOUVEAU : Vérification immédiate au démarrage ---
+    print("⏳ Starting initial startup sequence (Price Fetch + AI Forecast)...")
+    collect_daily_price()
+    run_forecast_job()
+    
     return scheduler

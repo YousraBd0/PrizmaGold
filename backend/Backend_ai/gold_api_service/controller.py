@@ -31,7 +31,8 @@ def get_live_price():
 
 @router.get("/latest")
 def get_latest():
-    return find_top10_by_recorded_at_desc()
+    from metal_price_repository import find_recent_prices
+    return find_recent_prices(limit=50)
 
 @router.get("/forecasts/latest")
 def get_latest_forecast():

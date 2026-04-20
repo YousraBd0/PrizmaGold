@@ -16,8 +16,8 @@ DB_CONFIG = {
 def get_connection():
     return psycopg2.connect(**DB_CONFIG)
 
-# ── findTop10ByOrderByRecordedAtDesc ──────────────────────────
-def find_top10_by_recorded_at_desc():
+# ── findRecentPrices ──────────────────────────────────────────
+def find_recent_prices(limit=50):
     conn = get_connection()
     cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute("""
@@ -25,12 +25,16 @@ def find_top10_by_recorded_at_desc():
                source_api, recorded_at, is_daily_snapshot
         FROM metal_prices
         ORDER BY recorded_at DESC
-        LIMIT 10;
-    """)
+        LIMIT %s;
+    """, (limit,))
     rows = cur.fetchall()
     cur.close()
     conn.close()
     return [dict(r) for r in rows]
+
+# ── findTop10ByOrderByRecordedAtDesc (Legacy) ─────────────────
+def find_top10_by_recorded_at_desc():
+    return find_recent_prices(limit=10)
 
 # ── findByMetalTypeAndIsDailySnapshotTrue ─────────────────────
 def find_by_metal_type_daily_snapshot(metal_type: str):
