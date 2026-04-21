@@ -1,5 +1,4 @@
 # AI Data & Models
-backend/Backend_ai/data/
 backend/Backend_ai/trendsPipelining/__pycache__/
 backend/Backend_ai/forcasting/__pycache__/
 *.npy

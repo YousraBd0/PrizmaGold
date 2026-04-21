@@ -227,20 +227,20 @@ export default function Market() {
           grouped[dateStr] = {
             time: dateStr,
             rawDate: d,
-        gold: p.price_usd,
+            gold: p.price_usd,
             value: activeAsset === "gold" ? p.price_usd : p.price_usd * 0.012
           };
         }
       });
       const result = [];
       const today = new Date();
-      
+
       // On parcourt les 10 derniers jours calendaires
       for (let i = 9; i >= 0; i--) {
         const d = new Date();
         d.setDate(today.getDate() - i);
         const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
-        
+
         if (grouped[dateStr]) {
           result.push(grouped[dateStr]);
         } else {
@@ -314,11 +314,11 @@ export default function Market() {
               marginTop: 2
             }}
           >
-            <div style={{ 
-              width: 6, 
-              height: 6, 
-              borderRadius: "50%", 
-              backgroundColor: isWeekend ? "#dc2626" : "#22c55e" 
+            <div style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              backgroundColor: isWeekend ? "#dc2626" : "#22c55e"
             }} />
             MARKET {marketStatus}
           </motion.div>
@@ -479,8 +479,8 @@ export default function Market() {
                     if (entry.isInterpolated) fillColor = "#d1d5db";
 
                     return (
-                      <Cell 
-                        key={`cell-${index}`} 
+                      <Cell
+                        key={`cell-${index}`}
                         fill={fillColor}
                         fillOpacity={entry.isForecast ? 0.8 : (entry.isInterpolated ? 0.5 : 1)}
                         stroke={entry.isForecast ? "#22c55e" : "none"}
@@ -488,14 +488,14 @@ export default function Market() {
                       />
                     );
                   })}
-                  <LabelList 
-                    dataKey="value" 
+                  <LabelList
+                    dataKey="value"
                     content={(props) => {
                       const { x, y, width, index } = props;
                       const entry = displayData[index];
                       if (entry && entry.isInterpolated) {
                         return (
-                          <circle cx={x + width/2} cy={y - 10} r={3} fill="#dc2626" />
+                          <circle cx={x + width / 2} cy={y - 10} r={3} fill="#dc2626" />
                         );
                       }
                       return null;
@@ -769,7 +769,7 @@ export default function Market() {
                     borderRadius: "4px",
                     width: "fit-content"
                   }}>
-                    <span style={{ color: "#22c55e" }}>●</span> 
+                    <span style={{ color: "#22c55e" }}>●</span>
                     Accuracy: {(() => {
                       const valid = currentForecast.forecastData.filter(d => d.actual && d.actual > 0);
                       const totalAcc = valid.reduce((acc, p) => acc + (1 - Math.abs(p.ai - p.actual) / p.actual), 0);
