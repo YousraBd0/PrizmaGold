@@ -750,9 +750,33 @@ export default function Market() {
                     gap: 4,
                   }}
                 >
-                  <span style={{ fontSize: 18 }}>{currentForecast.prophet_change >= 0 ? "↗" : "↘"}</span>
+                  <span style={{ fontSize: 18 }}>{currentForecast.prophet_change >= 0 ? "▲" : "▼"}</span>
                   {currentForecast.prophet_change > 0 ? "+" : ""}{currentForecast.prophet_change.toFixed(2)}% from current
                 </div>
+
+                {/* NOUVEL INDICATEUR DE PRÉCISION */}
+                {currentForecast.forecastData && currentForecast.forecastData.some(d => d.actual) && (
+                  <div style={{
+                    marginTop: 8,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#999",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "4px 8px",
+                    background: "rgba(0,0,0,0.03)",
+                    borderRadius: "4px",
+                    width: "fit-content"
+                  }}>
+                    <span style={{ color: "#22c55e" }}>●</span> 
+                    Accuracy: {(() => {
+                      const valid = currentForecast.forecastData.filter(d => d.actual && d.actual > 0);
+                      const totalAcc = valid.reduce((acc, p) => acc + (1 - Math.abs(p.ai - p.actual) / p.actual), 0);
+                      return ((totalAcc / valid.length) * 100).toFixed(1);
+                    })()}%
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
