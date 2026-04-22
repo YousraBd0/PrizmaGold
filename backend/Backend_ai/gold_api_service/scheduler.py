@@ -10,17 +10,17 @@ from gold_price_forcast import run_pro_system
 def collect_daily_price():
     try:
         saved = fetch_and_save()
-        print(f"✅ Daily Gold price saved: ${saved['price_usd']}")
+        print(f"--- Daily Gold price saved: ${saved['price_usd']}")
     except Exception as e:
-        print(f"❌ Daily price fetch failed: {e}")
+        print(f"--- Daily price fetch failed: {e}")
 
 def run_forecast_job():
     try:
-        print("🚀 Lancement de la prédiction Prophet (Job tous les 2 jours)...")
+        print("--- Lancement de la prédiction Prophet (Job tous les 2 jours)...")
         run_pro_system()
-        print("✅ Prédiction terminée.")
+        print("--- Prédiction terminée.")
     except Exception as e:
-        print(f"❌ Forecast job failed: {e}")
+        print(f"--- Forecast job failed: {e}")
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
@@ -35,7 +35,7 @@ def start_scheduler():
     scheduler.start()
 
     # --- NOUVEAU : Vérification immédiate au démarrage ---
-    print("⏳ Starting initial startup sequence (Price Fetch + AI Forecast)...")
+    print("--- Starting initial startup sequence (Price Fetch + AI Forecast)...")
     collect_daily_price()
     run_forecast_job()
     

@@ -19,6 +19,14 @@ from datetime import timedelta, date as dt_date, datetime
 from metal_price_repository import find_top10_by_recorded_at_desc
 
 def fetch_and_save() -> dict:
+    today_date = dt_date.today()
+    
+    # --- DÉTECTION DOUBLON ---
+    last_records = find_top10_by_recorded_at_desc()
+    if last_records and last_records[0]["recorded_at"].date() == today_date:
+        print(f"--- Data for {today_date} already exists. No new record needed.")
+        return None
+
     data = fetch_live_only()
     today_price = data.get("price")
     
@@ -32,7 +40,7 @@ def fetch_and_save() -> dict:
         # S'il y a un trou de plus d'un jour (ex: on est lundi, dernier = vendredi)
         delta = (today_date - last_date).days
         if delta > 1:
-            print(f"🕵️ Gap detected: {delta-1} days missing. Filling with last price...")
+            print(f"--- Gap detected: {delta-1} days missing. Filling with last price...")
             last_price_usd = float(last_records[0]["price_usd"])
             last_price_eur = float(last_records[0]["price_eur"])
             

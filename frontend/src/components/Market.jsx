@@ -241,16 +241,19 @@ export default function Market() {
         d.setDate(today.getDate() - i);
         const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
 
-        if (grouped[dateStr]) {
+        const dayOfWeek = d.getDay();
+        const isActuallyWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+        if (grouped[dateStr] && !isActuallyWeekend) {
           result.push(grouped[dateStr]);
         } else {
-          // Si trou de donnée (week-end), on répète le dernier prix connu
-          const lastVal = result.length > 0 ? result[result.length - 1].gold : 4829.31;
+          // Si trou de donnée OU week-end (même si on a un prix de vendredi qui traîne)
+          const lastVal = grouped[dateStr] ? grouped[dateStr].gold : (result.length > 0 ? result[result.length - 1].gold : 4829.31);
           result.push({
             time: dateStr,
             gold: lastVal,
             value: activeAsset === "gold" ? lastVal : lastVal * 0.012,
-            isInterpolated: true
+            isInterpolated: true // Force l'affichage "Marché Fermé"
           });
         }
       }
@@ -771,10 +774,15 @@ export default function Market() {
                   }}>
                     <span style={{ color: "#22c55e" }}>●</span>
                     Accuracy: {(() => {
-                      const valid = currentForecast.forecastData.filter(d => d.actual && d.actual > 0);
-                      const totalAcc = valid.reduce((acc, p) => acc + (1 - Math.abs(p.ai - p.actual) / p.actual), 0);
-                      return ((totalAcc / valid.length) * 100).toFixed(1);
-                    })()}%
+                      const validPoints = currentForecast.forecastData.filter(d => d.actual && d.ai);
+                      if (validPoints.length === 0) return "Initializing...";
+                      const totalError = validPoints.reduce((acc, curr) => {
+                        const error = Math.abs(curr.ai - curr.actual) / curr.actual;
+                        return acc + error;
+                      }, 0);
+                      const mae = totalError / validPoints.length;
+                      return ((1 - mae) * 100).toFixed(1) + "%";
+                    })()}
                   </div>
                 )}
               </div>
@@ -929,7 +937,7 @@ export default function Market() {
             >
               "Gold is {currentForecast.signal.includes("BUY") ? "showing bullish strength with institutional accumulation" : currentForecast.signal.includes("SELL") ? "facing downward pressure and market exhaustion" : "currently in a phase of neutral consolidation"}.
               Analysis suggests a {Math.abs(currentForecast.prophet_change).toFixed(1)}% {currentForecast.prophet_change >= 0 ? "upside potential" : "downside risk"} within the AI recommendation window.
-              Key drivers: {currentForecast.reasons.slice(0, 3).join(", ")}."
+              "
             </p>
           </motion.div>
         </motion.div>

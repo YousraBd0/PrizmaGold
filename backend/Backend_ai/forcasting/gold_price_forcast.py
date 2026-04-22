@@ -359,6 +359,14 @@ def plot_with_indicators(df: pd.DataFrame, forecast: pd.DataFrame, signal_info):
 
 # ========================= MAIN =========================
 def run_pro_system():
+    # --- DÉTECTION DOUBLON ---
+    from forecast_repository import get_latest_advisory_with_accuracy
+    from datetime import date
+    latest = get_latest_advisory_with_accuracy("XAU")
+    if latest and latest['generated_at'].date() == date.today():
+        print(f"✅ AI Advisory for {date.today()} already exists. Skipping forecast.")
+        return
+
     print("🚀 PrizmaGold Pro — AI Trading System (Gold)\n")
     
     df = fetch_gold_data_from_db()

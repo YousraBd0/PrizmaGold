@@ -5,7 +5,9 @@ import os
 import sys
 import pandas as pd
 import yfinance as yf
-from datetime import datetime, timedelta
+import psycopg2
+import psycopg2.extras
+from datetime import datetime, timedelta, date as dt_date
 
 # Chemin absolu vers database/
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,29 +29,42 @@ def bootstrap_historical_prices():
         return
 
     # Fetch 2 years of data
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=365)  # 1 year instead of 2
+    # --- MODIF : On s'arrête à AUJOURD'HUI pour que yFinance inclue HIER ---
+    end_date = dt_date.today()
+    start_date = end_date - timedelta(days=365)
     
-    print(f"Fetching data from {start_date.date()} to {end_date.date()}...")
+    print(f"Bootstrapping historical gold prices from yFinance...")
+    print(f"Fetching data from {start_date} to {end_date} (excluding today a)...")
     
     # Try different tickers if GC=F doesn't work
     tickers = ["GC=F", "Gold", "GLD"]
     gold = None
     
-    for ticker in tickers:
+    for t in tickers:
         try:
-            print(f"Trying ticker: {ticker}")
-            gold = yf.download(ticker, start=start_date, end=end_date, progress=False)
+            print(f"Trying ticker: {t}")
+            gold = yf.download(t, start=start_date, end=end_date)
             if not gold.empty:
-                print(f"Success with ticker: {ticker}")
+                print(f"Success with ticker: {t}")
                 break
-        except Exception as e:
-            print(f"Failed with {ticker}: {e}")
+        except Exception:
             continue
-    
+            
     if gold is None or gold.empty:
-        print("No data received from yFinance with any ticker")
+        print("❌ Could not fetch any gold data from yFinance.")
         return
+
+    # --- CONNEXION BD ---
+    from dotenv import load_dotenv
+    load_dotenv()
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        database=os.getenv("DB_NAME", "prizmagold"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASS", "yousra123")
+    )
+    conn.autocommit = True
+    cur = conn.cursor()
 
     # Convert to daily prices (use Close as price)
     prices_saved = 0
@@ -65,21 +80,28 @@ def bootstrap_historical_prices():
             # Approximate EUR conversion (rough estimate, you might want to use actual rates)
             price_eur = price_usd * 0.85  # Rough EUR conversion
 
-            save_metal_price(
-                metal_type="XAU",
-                price_usd=price_usd,
-                price_eur=price_eur,
-                source_api="yfinance_bootstrap",
-                raw_response={"date": date.strftime("%Y-%m-%d"), "close": price_usd},
-                is_daily_snapshot=True,
-                recorded_at=date  # Set the historical date as recorded_at
-            )
+            cur.execute("""
+                INSERT INTO metal_prices (metal_type, price_usd, price_eur, source_api, raw_response, is_daily_snapshot, recorded_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (metal_type, recorded_at) DO NOTHING
+            """, (
+                "XAU",
+                price_usd,
+                price_eur,
+                "yfinance_bootstrap",
+                psycopg2.extras.Json({"date": date.strftime("%Y-%m-%d"), "close": price_usd}),
+                True,
+                date
+            ))
             prices_saved += 1
 
         except Exception as e:
             print(f"Error saving price for {date}: {e}")
             print(f"Close value type: {type(row['Close'])}, value: {row['Close']}")
 
+    conn.commit()
+    cur.close()
+    conn.close()
     print(f"Bootstrapping complete! Saved {prices_saved} historical prices to DB.")
     print("Now switch to production mode: only GoldAPI for daily updates.")
 

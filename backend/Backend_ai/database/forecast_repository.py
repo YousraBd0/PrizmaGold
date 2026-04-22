@@ -86,7 +86,7 @@ def get_latest_advisory_with_accuracy(metal_type: str):
     
     # 2. Fetch the past 5 days of forecasts and correlate with actual prices
     cur.execute("""
-        SELECT 
+        SELECT DISTINCT ON (f.forecast_date)
             f.forecast_date, 
             f.yhat as ai_price, 
             mp.price_usd as actual_price
@@ -98,7 +98,7 @@ def get_latest_advisory_with_accuracy(metal_type: str):
             GROUP BY DATE(recorded_at)
         ) mp ON f.forecast_date = mp.rec_date
         WHERE f.metal_type = %s
-        ORDER BY f.forecast_date DESC
+        ORDER BY f.forecast_date DESC, f.generated_at DESC
         LIMIT 5;
     """, (metal_type, metal_type))
     
@@ -120,6 +120,7 @@ def get_latest_advisory_with_accuracy(metal_type: str):
         })
 
     return {
+        "generated_at": latest_advisory["generated_at"],
         "signal": latest_advisory["recommendation"],
         "score": float(latest_advisory["confidence"]) if latest_advisory["confidence"] else 75.0,
         "current_price": float(latest_advisory["current_price"]),
