@@ -2,7 +2,7 @@ import React from "react";
 import styles from "../styles/StudioPage.module.css";
 import botIcon from "../assets/ChatBot Loader Animation.gif";
 
-const ChatBubble = ({ children, role, isTyping }) => {
+const ChatBubble = ({ children, role, isTyping, imageUrl }) => {
   const isUser = role === "user";
 
   if (isUser) {
@@ -23,7 +23,23 @@ const ChatBubble = ({ children, role, isTyping }) => {
       <div className={`${styles.chatBubble}${isTyping ? " " + styles.chatBubbleTyping : ""}`}>
         {isTyping
           ? <span className={styles.typingDots}><span /><span /><span /></span>
-          : children}
+          : <>
+              {children}
+              {imageUrl && (
+                <img 
+                  src={imageUrl} 
+                  alt="Generated jewelry" 
+                  style={{ 
+                    width: "100%", 
+                    borderRadius: "12px", 
+                    marginTop: "8px",
+                    maxHeight: "300px",
+                    objectFit: "cover"
+                  }} 
+                />
+              )}
+            </>
+        }
       </div>
     </div>
   );

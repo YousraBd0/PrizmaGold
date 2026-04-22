@@ -15,48 +15,40 @@ const METALS = {
 /* ── Three.js Ring Viewer ── */
 const RingViewer = ({ activeMetal, modelUrl }) => {
   const mountRef    = useRef(null);
-
-  // These refs hold the THREE objects across renders — never recreated
   const rendererRef = useRef(null);
   const sceneRef    = useRef(null);
   const cameraRef   = useRef(null);
-  const frameRef    = useRef(null);       // animation frame ID
-  const modelRef    = useRef(null);       // the currently displayed object
+  const frameRef    = useRef(null);
+  const modelRef    = useRef(null);
 
-  // ── EFFECT 1: Run ONCE on mount — build the scene, renderer, lights, loop ──
+  // ── EFFECT 1: Run ONCE on mount ──
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
 
-    // Scene
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    // Camera
     const camera = new THREE.PerspectiveCamera(
       45, el.clientWidth / el.clientHeight, 0.1, 1000
     );
     camera.position.z = 18;
     cameraRef.current = camera;
 
-    // Renderer — created ONCE, canvas appended ONCE
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(el.clientWidth, el.clientHeight);
     el.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lights — added once, stay forever
     scene.add(new THREE.AmbientLight(0xffffff, 1));
     const dirLight = new THREE.DirectionalLight(0xffffff, 2);
     dirLight.position.set(5, 10, 7.5);
     scene.add(dirLight);
 
-    // Orbit controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // Animation loop — runs forever, rotates whatever modelRef.current points to
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
       if (modelRef.current) modelRef.current.rotation.y += 0.005;
@@ -65,7 +57,6 @@ const RingViewer = ({ activeMetal, modelUrl }) => {
     };
     animate();
 
-    // Resize handler
     const onResize = () => {
       if (!el) return;
       camera.aspect = el.clientWidth / el.clientHeight;
@@ -74,22 +65,23 @@ const RingViewer = ({ activeMetal, modelUrl }) => {
     };
     window.addEventListener("resize", onResize);
 
-    // Cleanup on unmount — runs only when the component is destroyed
     return () => {
       cancelAnimationFrame(frameRef.current);
       window.removeEventListener("resize", onResize);
       renderer.dispose();
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
     };
-  }, []); // ← empty array: this runs ONCE only
+  }, []);
 
-
-  // ── EFFECT 2: Swap the displayed model whenever activeMetal or modelUrl changes ──
+  // ── EFFECT 2: Swap model when activeMetal or modelUrl changes ──
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Remove the previous model from the scene and dispose its resources
+    // If it's a Pollinations image URL, skip — don't try to load as 3D
+    if (modelUrl && modelUrl.includes('pollinations')) return;
+
+    // Remove previous model
     if (modelRef.current) {
       scene.remove(modelRef.current);
       modelRef.current.traverse((child) => {
@@ -106,29 +98,25 @@ const RingViewer = ({ activeMetal, modelUrl }) => {
     }
 
     if (modelUrl) {
-      // Load the AI-generated GLB model
       const loader = new GLTFLoader();
       loader.load(
         modelUrl,
         (gltf) => {
           const model = gltf.scene;
-
-          // Auto-scale and center so any model fits the viewer
           const box    = new THREE.Box3().setFromObject(model);
           const center = box.getCenter(new THREE.Vector3());
           const size   = box.getSize(new THREE.Vector3());
           const scale  = 12 / Math.max(size.x, size.y, size.z);
           model.scale.setScalar(scale);
           model.position.sub(center.multiplyScalar(scale));
-
           scene.add(model);
-          modelRef.current = model;  // hand off to the animation loop
+          modelRef.current = model;
         },
         undefined,
         (err) => console.error("GLTFLoader error:", err)
       );
     } else {
-      // No AI model yet — show the fallback torus ring
+      // Fallback torus ring
       const mesh = new THREE.Mesh(
         new THREE.TorusGeometry(5, 1.6, 32, 100),
         new THREE.MeshStandardMaterial({
@@ -138,10 +126,9 @@ const RingViewer = ({ activeMetal, modelUrl }) => {
         })
       );
       scene.add(mesh);
-      modelRef.current = mesh;  // hand off to the animation loop
+      modelRef.current = mesh;
     }
-  }, [activeMetal, modelUrl]); // ← runs when metal or URL changes, but does NOT recreate the renderer
-
+  }, [activeMetal, modelUrl]);
 
   return <div ref={mountRef} style={{ width: "100%", height: "100%" }} />;
 };
@@ -149,21 +136,50 @@ const RingViewer = ({ activeMetal, modelUrl }) => {
 
 /* ── Main ProductCard Component ── */
 const ProductCard = ({ activeMetal, setActiveMetal, specs, modelUrl }) => {
+  const isImage = modelUrl?.includes('pollinations');
+
   return (
     <>
       <div className={styles.productCard}>
-
         <div className={styles.ringViewerWrapper}>
-          <RingViewer activeMetal={activeMetal} modelUrl={modelUrl} />
-          {modelUrl && (
+
+          {isImage ? (
             <div style={{
-              position: "absolute", bottom: "10px", right: "10px",
-              fontSize: "10px", background: "rgba(212,165,32,0.2)",
-              padding: "2px 8px", borderRadius: "10px", color: "#ffd700",
+              width: "100%", height: "100%",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              position: "relative"
             }}>
-              AI Generated 3D
+              <img
+                src={modelUrl}
+                alt="AI Generated Jewelry"
+                style={{
+                  width: "100%", height: "100%",
+                  objectFit: "contain", borderRadius: "12px"
+                }}
+              />
+              <div style={{
+                position: "absolute", bottom: "10px", right: "10px",
+                fontSize: "10px", background: "rgba(212,165,32,0.2)",
+                padding: "2px 8px", borderRadius: "10px", color: "#ffd700",
+              }}>
+                AI Generated ✨
+              </div>
             </div>
+          ) : (
+            <>
+              <RingViewer activeMetal={activeMetal} modelUrl={modelUrl} />
+              {modelUrl && (
+                <div style={{
+                  position: "absolute", bottom: "10px", right: "10px",
+                  fontSize: "10px", background: "rgba(212,165,32,0.2)",
+                  padding: "2px 8px", borderRadius: "10px", color: "#ffd700",
+                }}>
+                  AI Generated 3D
+                </div>
+              )}
+            </>
           )}
+
         </div>
 
         <div className={styles.metalRow}>
