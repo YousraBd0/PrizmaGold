@@ -1,0 +1,485 @@
+/* ═══════════════════════════════════════════════════
+   PriceEstimation.module.css  —  Module 3 Styles
+   Follows the same emerald + gold design language
+   as StudioPage.module.css
+════════════════════════════════════════════════════ */
+ 
+/* ── PAGE ROOT ───────────────────────────────────── */
+ 
+.pageRoot {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-size: cover;
+  background-position: center;
+  padding: 20px;
+  box-sizing: border-box;
+  font-family: sans-serif, serif;
+  gap: 12px;
+}
+ 
+/* ── LEFT PANEL — design preview ─────────────────── */
+ 
+.previewPanel {
+  flex: 0 0 36%;
+  max-width: 380px;
+  background: radial-gradient(circle, #ffffffd2);
+  border-radius: 30px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+  height: 95vh;
+  max-height: 95vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+ 
+.backBtn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #9a7b2f;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.3px;
+  transition: color 0.2s;
+}
+ 
+.backBtn:hover { color: #c9a84c; }
+ 
+.previewImageWrapper {
+  position: relative;
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #f4f4f4;
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #0d563a;
+}
+ 
+.previewImage {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  display: block;
+}
+ 
+.previewPlaceholder {
+  font-size: 64px;
+  opacity: 0.3;
+}
+ 
+.confirmedBadge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 10px;
+  background: rgba(212, 165, 32, 0.2);
+  border: 1px solid rgba(212, 165, 32, 0.5);
+  padding: 3px 10px;
+  border-radius: 10px;
+  color: #c8960a;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+ 
+/* Specs summary card */
+.specsSummary {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 16px 20px;
+  border: 1.5px solid #0d563a;
+}
+ 
+.specsTitle {
+  font-family: serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #b9821c;
+  margin: 0 0 12px;
+  letter-spacing: 0.04em;
+}
+ 
+.specsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+ 
+.specsList li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-family: serif;
+  color: #0d563a;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(13, 86, 58, 0.1);
+}
+ 
+.specsList li:last-child { border-bottom: none; }
+ 
+.specsList li span:first-child { font-weight: 600; }
+.specsList li span:last-child  { color: #3a3a46; }
+ 
+/* ── RIGHT PANEL — form / result ─────────────────── */
+ 
+.formPanel {
+  flex: 1;
+  background: #0B301B;
+  border-radius: 30px;
+  border: 1px solid #EAB308;
+  padding: 36px 40px;
+  height: 95vh;
+  max-height: 95vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+ 
+/* ── ERROR BANNER ────────────────────────────────── */
+ 
+.errorBanner {
+  background: rgba(192, 57, 43, 0.2);
+  border: 1px solid rgba(192, 57, 43, 0.5);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #f5a9a0;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+ 
+/* ── LOADING STATE ───────────────────────────────── */
+ 
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 20px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+}
+ 
+.loadingSpinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(241, 189, 57, 0.2);
+  border-top-color: #f1bd39;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+ 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+ 
+/* ── FORM ────────────────────────────────────────── */
+ 
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+ 
+.formTitle {
+  font-family: serif;
+  font-size: 26px;
+  color: #ffdd7a;
+  margin: 0 0 6px;
+  letter-spacing: 0.04em;
+}
+ 
+.formSubtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+ 
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+ 
+.label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+}
+ 
+.input,
+.select,
+.textarea {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  color: #f9fafb;
+  font-size: 14px;
+  padding: 11px 16px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+ 
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: #f1bd39;
+}
+ 
+.select option {
+  background: #071013;
+  color: #f9fafb;
+}
+ 
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+ 
+.charCount {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: right;
+  margin-top: 4px;
+}
+ 
+.submitBtn {
+  margin-top: 10px;
+  padding: 15px;
+  background: radial-gradient(circle at 30% 30%, #ffeeb2, #d8a93d);
+  border: none;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #3a2500;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.3px;
+}
+ 
+.submitBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+}
+ 
+/* ── RESULT ──────────────────────────────────────── */
+ 
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+ 
+/* Breakdown card */
+.breakdown {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0 16px;
+}
+ 
+.breakdownRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #e0e0e0;
+}
+ 
+.breakdownLabel { color: rgba(255, 255, 255, 0.6); }
+.breakdownValue { font-weight: 600; color: #f5f5f5; }
+ 
+.breakdownDivider {
+  height: 1px;
+  background: rgba(241, 189, 57, 0.25);
+  margin: 4px 0;
+}
+ 
+.totalRow {
+  font-size: 17px;
+  font-weight: 700;
+  color: #f1bd39;
+}
+ 
+.totalRow .breakdownLabel { color: #f1bd39; }
+.totalRow .breakdownValue { color: #f1bd39; }
+ 
+/* Specs recap strip */
+.specsRecap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+ 
+.dot { opacity: 0.4; }
+ 
+/* Action buttons */
+.resultActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+ 
+.secondaryBtn {
+  flex: 1;
+  min-width: 130px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f5f5;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+ 
+.secondaryBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+ 
+.primaryBtn {
+  flex: 1;
+  min-width: 130px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: none;
+  background: radial-gradient(circle at 30% 30%, #ffeeb2, #d8a93d);
+  color: #3a2500;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+ 
+.primaryBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+}
+ 
+/* ── MOCK NOTICE ─────────────────────────────────── */
+ 
+.mockNotice {
+  width: 100%;
+  background: rgba(241, 189, 57, 0.1);
+  border: 1px solid rgba(241, 189, 57, 0.3);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: #c8960a;
+  text-align: center;
+  line-height: 1.5;
+}
+ 
+/* ── RESPONSIVE ──────────────────────────────────── */
+
+@media (max-width: 991px) {
+  .pageRoot {
+    flex-direction: column;
+    padding: 16px 12px;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .previewPanel {
+    flex: none;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+    padding: 24px 20px;
+  }
+
+  .previewImageWrapper {
+    min-height: 200px;
+  }
+
+  .previewImage {
+    max-height: 240px;
+  }
+
+  .specsSummary {
+    width: 100%;
+  }
+
+  .formPanel {
+    height: auto;
+    max-height: none;
+    padding: 32px 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .pageRoot {
+    padding: 12px 8px;
+  }
+
+  .previewPanel {
+    padding: 20px 16px;
+  }
+
+  .previewImageWrapper {
+    min-height: 180px;
+  }
+
+  .previewImage {
+    max-height: 210px;
+  }
+
+  .formPanel {
+    padding: 24px 18px;
+  }
+
+  .formTitle {
+    font-size: 23px;
+  }
+
+  .formSubtitle {
+    font-size: 12.5px;
+  }
+
+  .resultActions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .secondaryBtn,
+  .primaryBtn {
+    width: 100%;
+  }
+
+  .breakdown {
+    padding: 16px 18px;
+  }
+}

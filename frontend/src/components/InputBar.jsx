@@ -1,18 +1,34 @@
 import React from "react";
 import styles from "../styles/StudioPage.module.css";
 
-const InputBar = () => {
+const InputBar = ({ value, onChange, onSend, disabled }) => {
+  const handleKey = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSend?.();
+    }
+  };
+
   return (
-    <form className={styles.inputBar}>
+    <div className={styles.inputBar}>
       <input
         type="text"
         placeholder="Describe your masterpiece"
         className={styles.inputField}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        onKeyDown={handleKey}
+        disabled={disabled}
       />
-      <button type="submit" className={styles.sendButton} aria-label="Send">
+      <button
+        className={styles.sendButton}
+        aria-label="Send"
+        onClick={onSend}
+        disabled={disabled}
+      >
         ✏️
       </button>
-    </form>
+    </div>
   );
 };
 
