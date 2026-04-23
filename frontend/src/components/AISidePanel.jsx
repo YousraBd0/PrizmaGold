@@ -38,7 +38,7 @@ const AISidePanel = ({ onDesignUpdate, currentSpecs }) => {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8001/api/generate", {
+      const res = await fetch("http://127.0.0.1:8001/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -55,24 +55,26 @@ const AISidePanel = ({ onDesignUpdate, currentSpecs }) => {
       const data = await res.json();
 
       // FIX 2 — detect image URL and store it separately
+      const replyText = data.reply || data.image_url || "";
       const isImageUrl =
-        data.reply?.startsWith("http") && data.reply?.includes("pollinations");
+        (replyText.startsWith("http") && replyText.includes("pollinations")) || !!data.image_url;
 
       setMessages((prev) => [
         ...prev.slice(0, -1),
         {
           role: "ai",
-          text: isImageUrl ? "Here is your generated jewelry! ✨" : data.reply,
-          imageUrl: isImageUrl ? data.reply : null,
+          text: isImageUrl ? "Here is your generated jewelry! ✨" : replyText,
+          imageUrl: isImageUrl ? (data.image_url || replyText) : null,
         },
       ]);
 
       // FIX 3 — pass image URL as modelUrl to the 3D viewer
       onDesignUpdate?.(data.specs, data.reply);
-    } catch (error) {
+    } catch (err) {
+      console.error("AISidePanel Error:", err);
       setMessages((prev) => [
         ...prev.slice(0, -1),
-        { role: "ai", text: "Error connecting to server.", isError: true },
+        { role: "ai", text: `Error: ${err.message}` },
       ]);
     } finally {
       setIsLoading(false);
