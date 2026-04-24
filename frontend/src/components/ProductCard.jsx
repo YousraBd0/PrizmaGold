@@ -19,7 +19,6 @@ const DesignViewer = ({ imageUrl }) => {
   return (
     <div className={styles.designViewerWrapper}>
       <div className={styles.designPlaceholder}>
-        <span className={styles.placeholderIcon}>💍</span>
         <span className={styles.placeholderText}>
           Describe your design to generate a preview
         </span>

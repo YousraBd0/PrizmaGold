@@ -105,8 +105,9 @@ const PriceEstimationPage = ({ confirmedDesign, onBack }) => {
   const [result,    setResult]    = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error,     setError]     = useState(null);
+  const [liveFormData, setLiveFormData] = useState(null);
  
-  const { specs, imageUrl } = confirmedDesign;
+  const { specs, imageUrl, designId } = confirmedDesign;
  
   const handleFormSubmit = async (formData) => {
     setIsLoading(true);
@@ -124,7 +125,7 @@ const PriceEstimationPage = ({ confirmedDesign, onBack }) => {
         const res = await fetch("http://localhost:8080/api/estimate", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ specs, formData }),
+          body: JSON.stringify({ specs, formData, designId }),
         });
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         data = await res.json();
@@ -149,7 +150,7 @@ const PriceEstimationPage = ({ confirmedDesign, onBack }) => {
           {imageUrl ? (
             <img src={imageUrl} alt="Confirmed Design" className={styles.previewImage} />
           ) : (
-            <div className={styles.previewPlaceholder}>💍</div>
+            <div className={styles.previewPlaceholder}></div>
           )}
           <div className={styles.confirmedBadge}>Confirmed Design</div>
         </div>
@@ -157,10 +158,9 @@ const PriceEstimationPage = ({ confirmedDesign, onBack }) => {
         <div className={styles.specsSummary}>
           <h3 className={styles.specsTitle}>Design Specifications</h3>
           <ul className={styles.specsList}>
-            <li><span>Metal</span>        <span>{specs?.metal  || "—"}</span></li>
-            <li><span>Stone</span>        <span>{specs?.stone  || "—"}</span></li>
-            <li><span>Ring Size</span>    <span>{specs?.size   || "—"}</span></li>
-            <li><span>Total Weight</span> <span>{specs?.weight || "—"}</span></li>
+            <li><span>Metal</span>        <span>{liveFormData?.karat ? `${liveFormData.karat}k Gold` : (specs?.metal || "—")}</span></li>
+            {(liveFormData?.size || specs?.size) && <li><span>Ring Size</span>    <span>{liveFormData?.size || specs?.size}</span></li>}
+            <li><span>Total Weight</span> <span>{liveFormData?.weight ? `${liveFormData.weight} g` : (specs?.weight || "—")}</span></li>
           </ul>
         </div>
  
@@ -190,7 +190,7 @@ const PriceEstimationPage = ({ confirmedDesign, onBack }) => {
             onBack={onBack}
           />
         ) : (
-          <EstimationForm onSubmit={handleFormSubmit} />
+          <EstimationForm onSubmit={handleFormSubmit} initialSpecs={specs} onFormChange={setLiveFormData} />
         )}
       </div>
     </div>

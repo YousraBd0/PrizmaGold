@@ -188,7 +188,7 @@ export default function Market() {
 
   // Use the latest price from the API if available. Otherwise, fallback.
   const rawPrice = livePrice || (prices && prices.length > 0
-    ? prices[0].price_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    ? (prices[0].price_usd || prices[0].priceUsd || 4829.31).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : "4,829.31");
 
   const displayPrice = isWeekend ? rawPrice : rawPrice;
@@ -214,7 +214,7 @@ export default function Market() {
     ? (() => {
       const grouped = {};
       [...prices].reverse().forEach((p) => {
-        const d = new Date(p.recorded_at);
+        const d = new Date(p.recorded_at || p.recordedAt);
         // On crée une clé par jour (YYYY-MM-DD)
         const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
 
@@ -223,12 +223,13 @@ export default function Market() {
         // On prend le point s'il n'existe pas encore pour ce jour, 
         // ou si c'est celui de 9h (notre référence), 
         // ou si ce point est plus récent que celui déjà stocké.
+        const priceValue = p.price_usd || p.priceUsd;
         if (!grouped[dateStr] || hour === 9 || d > grouped[dateStr].rawDate) {
           grouped[dateStr] = {
             time: dateStr,
             rawDate: d,
-            gold: p.price_usd,
-            value: activeAsset === "gold" ? p.price_usd : p.price_usd * 0.012
+            gold: priceValue,
+            value: activeAsset === "gold" ? priceValue : priceValue * 0.012
           };
         }
       });

@@ -7,15 +7,21 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import com.PrizmaGold.entity.Design;
+import com.PrizmaGold.repository.DesignRepository;
+import java.time.ZonedDateTime;
+
 @Service
 public class DesignService {
 
     private final SessionStore sessionStore;
     private final PythonClient pythonClient;
+    private final DesignRepository designRepository;
 
-    public DesignService(SessionStore sessionStore, PythonClient pythonClient) {
+    public DesignService(SessionStore sessionStore, PythonClient pythonClient, DesignRepository designRepository) {
         this.sessionStore = sessionStore;
         this.pythonClient = pythonClient;
+        this.designRepository = designRepository;
     }
 
     public GenerateResponse processDesign(GenerateRequest request) {
@@ -47,5 +53,17 @@ public class DesignService {
             null,
             pythonResp.getImage_url()
         );
+    }
+
+    public Design saveDesign(DesignDTO dto) {
+        Design design = Design.builder()
+                .title(dto.getTitle() != null ? dto.getTitle() : "Untitled Design")
+                .jewelryType(dto.getJewelryType() != null ? dto.getJewelryType() : "Unknown")
+                .metalType(dto.getMetalType() != null ? dto.getMetalType() : "Unknown")
+                .imageUrl(dto.getImageUrl())
+                .userId(dto.getUserId())
+                .createdAt(ZonedDateTime.now())
+                .build();
+        return designRepository.save(design);
     }
 }

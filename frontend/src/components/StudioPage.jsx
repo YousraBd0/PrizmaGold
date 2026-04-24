@@ -4,6 +4,7 @@ import DetailsPanel from "./DetailsPanel";
 import AISidePanel from "./AISidePanel";
 import PriceEstimationPage from "./PriceEstimationPage";
 import bgEmeraldSatin from "../assets/Gemini_Generated_Image.png";
+import { saveConfirmedDesign } from "../services/designService";
 
 const StudioPage = () => {
   const [specs, setSpecs] = useState({
@@ -17,6 +18,7 @@ const StudioPage = () => {
   const [activeMetal, setActiveMetal] = useState("emerald");
   const [imageUrl,    setImageUrl]    = useState(null);
   const [confirmed,   setConfirmed]   = useState(false);
+  const [designId,    setDesignId]    = useState(null);
 
   const handleDesignUpdate = (newSpecs, newImageUrl) => {
     if (newSpecs) {
@@ -37,7 +39,23 @@ const StudioPage = () => {
     if (newImageUrl) setImageUrl(newImageUrl);
   };
 
-  const handleConfirmDesign = () => {
+  const handleConfirmDesign = async () => {
+    try {
+      if (imageUrl) {
+        const savedDesign = await saveConfirmedDesign({
+          title: specs.name || "Custom AI Design",
+          jewelryType: "Ring", // Defaulting to ring for now
+          metalType: specs.metal || "Unknown",
+          imageUrl: imageUrl,
+          userId: null
+        });
+        if (savedDesign && savedDesign.designId) {
+          setDesignId(savedDesign.designId);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to save design:", error);
+    }
     setConfirmed(true);
   };
 
@@ -45,7 +63,7 @@ const StudioPage = () => {
   if (confirmed) {
     return (
       <PriceEstimationPage
-        confirmedDesign={{ specs, imageUrl }}
+        confirmedDesign={{ specs, imageUrl, designId }}
         onBack={() => setConfirmed(false)}
       />
     );

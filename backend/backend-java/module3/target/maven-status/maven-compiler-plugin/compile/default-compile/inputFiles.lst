@@ -1,0 +1,15 @@
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\service\EstimationService.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\model\MetalPrice.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\PrizmaGoldApplication.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\controller\EstimationController.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\service\GoldApiService.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\dto\SpecsDTO.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\repository\MetalPriceRepository.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\controller\MetalPriceController.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\entity\CostSimulation.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\repository\CostSimulationRepository.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\dto\FormDataDTO.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\dto\EstimationRequestDTO.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\scheduler\PriceScheduler.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\config\CorsConfig.java
+D:\PPD\PrizmaGold\backend\backend-java\module3\src\main\java\com\prizmagold\dto\EstimationResponseDTO.java

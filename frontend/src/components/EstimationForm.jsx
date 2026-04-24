@@ -1,17 +1,31 @@
 import React, { useState } from "react";
 import styles from "../styles/PriceEstimation.module.css";
 
-const EstimationForm = ({ onSubmit }) => {
+const EstimationForm = ({ onSubmit, initialSpecs = {}, onFormChange }) => {
   const [form, setForm] = useState({
     clientName: "",
     quantity: 1,
     labour: "",
     taxes: "",
     benefits: "",
+    karat: 18,
+    weight: initialSpecs.weight ? parseFloat(initialSpecs.weight) : "",
+    size: initialSpecs.size || "",
   });
 
-  const set = (field) => (e) =>
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const set = (field) => (e) => {
+    const value = e.target.value;
+    setForm((prev) => {
+      const updated = { ...prev, [field]: value };
+      if (onFormChange) onFormChange(updated);
+      return updated;
+    });
+  };
+
+  // Initialize onFormChange with initial state on mount
+  React.useEffect(() => {
+    if (onFormChange) onFormChange(form);
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -22,6 +36,8 @@ const EstimationForm = ({ onSubmit }) => {
       labour: Number(form.labour),
       taxes: Number(form.taxes),
       benefits: Number(form.benefits),
+      karat: Number(form.karat),
+      weight: Number(form.weight),
     });
   };
 
@@ -58,6 +74,49 @@ const EstimationForm = ({ onSubmit }) => {
         />
       </div>
 
+      {/* Karat */}
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>Karat of Gold</label>
+        <input
+          className={styles.input}
+          type="number"
+          step="0.1"
+          placeholder="e.g. 18"
+          value={form.karat}
+          onChange={set("karat")}
+          required
+        />
+      </div>
+
+      {/* Weight */}
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>Weight (grams)</label>
+        <input
+          className={styles.input}
+          type="number"
+          step="0.01"
+          placeholder="e.g. 3.5"
+          value={form.weight}
+          onChange={set("weight")}
+          required
+        />
+      </div>
+
+      {/* Size - only display if it has an initial value (e.g. it's a ring) */}
+      {initialSpecs.size && (
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Ring Size</label>
+          <input
+            className={styles.input}
+            type="text"
+            placeholder="e.g. 18"
+            value={form.size}
+            onChange={set("size")}
+            required
+          />
+        </div>
+      )}
+
       {/* Labour */}
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Labour Cost (Flat)</label>
@@ -74,12 +133,12 @@ const EstimationForm = ({ onSubmit }) => {
 
       {/* Taxes */}
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Taxes (%)</label>
+        <label className={styles.label}>Taxes (USD)</label>
         <input
           className={styles.input}
           type="number"
           step="0.01"
-          placeholder="e.g. 15"
+          placeholder="Enter amount in USD"
           value={form.taxes}
           onChange={set("taxes")}
           required
@@ -88,12 +147,12 @@ const EstimationForm = ({ onSubmit }) => {
 
       {/* Benefits */}
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Benefits / Margin (%)</label>
+        <label className={styles.label}>Benefits / Margin (USD)</label>
         <input
           className={styles.input}
           type="number"
           step="0.01"
-          placeholder="e.g. 25"
+          placeholder="Enter amount in USD"
           value={form.benefits}
           onChange={set("benefits")}
           required
