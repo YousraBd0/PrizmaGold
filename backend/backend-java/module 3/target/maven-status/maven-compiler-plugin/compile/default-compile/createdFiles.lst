@@ -1,0 +1,16 @@
+com\prizmagold\scheduler\PriceScheduler.class
+com\prizmagold\entity\EstimationRecord.class
+com\prizmagold\controller\EstimationController.class
+com\prizmagold\controller\MetalPriceController.class
+com\prizmagold\dto\FormDataDTO.class
+com\prizmagold\dto\SpecsDTO.class
+com\prizmagold\dto\EstimationResponseDTO.class
+com\prizmagold\repository\EstimationRepository.class
+com\prizmagold\config\CorsConfig.class
+com\prizmagold\service\EstimationService.class
+com\prizmagold\dto\EstimationResponseDTO$EstimationResponseDTOBuilder.class
+com\prizmagold\service\GoldApiService.class
+com\prizmagold\PrizmaGoldApplication.class
+com\prizmagold\model\MetalPrice.class
+com\prizmagold\dto\EstimationRequestDTO.class
+com\prizmagold\repository\MetalPriceRepository.class

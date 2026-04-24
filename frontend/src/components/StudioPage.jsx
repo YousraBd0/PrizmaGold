@@ -2,40 +2,56 @@ import React, { useState } from "react";
 import styles from "../styles/StudioPage.module.css";
 import DetailsPanel from "./DetailsPanel";
 import AISidePanel from "./AISidePanel";
+import PriceEstimationPage from "./PriceEstimationPage";
 import bgEmeraldSatin from "../assets/Gemini_Generated_Image.png";
 
 const StudioPage = () => {
   const [specs, setSpecs] = useState({
-    size: "20",
-    metal: "18k Gold",
-    stone: "Green Emerald",
-    weight: "3.2 g",
-    cost: "3,150.00 $",
+    size:   "—",
+    metal:  "—",
+    stone:  "—",
+    weight: "—",
+    cost:   "—",
   });
 
   const [activeMetal, setActiveMetal] = useState("emerald");
-  const [modelUrl, setModelUrl] = useState(null); // NEW: Track the 3D model path
+  const [imageUrl,    setImageUrl]    = useState(null);
+  const [confirmed,   setConfirmed]   = useState(false);
 
-  const handleDesignUpdate = (newSpecs, newModelUrl) => {
+  const handleDesignUpdate = (newSpecs, newImageUrl) => {
     if (newSpecs) {
       setSpecs(newSpecs);
+
       if (newSpecs.metal) {
-        // Map the metal name from the API to your METALS object keys
         const metalMap = {
-          "18k gold": "emerald",
-          "rose gold": "verdigris",
+          "18k gold":   "emerald",
+          "rose gold":  "verdigris",
           "silver 925": "malachite",
-          platinum: "jade",
+          "platinum":   "jade",
         };
         const key = metalMap[newSpecs.metal.toLowerCase()] ?? "emerald";
         setActiveMetal(key);
       }
     }
-    if (newModelUrl) {
-      setModelUrl(newModelUrl);
-    }
+
+    if (newImageUrl) setImageUrl(newImageUrl);
   };
 
+  const handleConfirmDesign = () => {
+    setConfirmed(true);
+  };
+
+  // Module 3: Go to Estimation Page
+  if (confirmed) {
+    return (
+      <PriceEstimationPage
+        confirmedDesign={{ specs, imageUrl }}
+        onBack={() => setConfirmed(false)}
+      />
+    );
+  }
+
+  // Module 1: Studio Page
   return (
     <div
       className={styles.pageRoot}
@@ -46,9 +62,13 @@ const StudioPage = () => {
           activeMetal={activeMetal}
           setActiveMetal={setActiveMetal}
           specs={specs}
-          modelUrl={modelUrl}
+          imageUrl={imageUrl}
+          onConfirmDesign={handleConfirmDesign}
         />
-        <AISidePanel onDesignUpdate={handleDesignUpdate} currentSpecs={specs} />
+        <AISidePanel
+          onDesignUpdate={handleDesignUpdate}
+          currentSpecs={specs}
+        />
       </div>
     </div>
   );

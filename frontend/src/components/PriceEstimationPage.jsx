@@ -7,7 +7,7 @@ import styles from "../styles/PriceEstimation.module.css";
 //  MOCK SWITCH
 //  Set to false when Spring Boot /api/estimate is ready
 // ─────────────────────────────────────────────────────────────────
-const USE_MOCK = true;
+const USE_MOCK = false;
  
 // ─────────────────────────────────────────────────────────────────
 //  MOCK ESTIMATOR
